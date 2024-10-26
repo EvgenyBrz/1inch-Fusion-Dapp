@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1inch Fusion+ Cross-Chain Swap App</title>
+  <!-- Include Web3.js -->
+  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+</head>
+<body>
+  <h1>1inch Fusion+ Cross-Chain Swap App</h1>
+  
+  <section id="quote-section">
+    <h2>Cross-Chain USDT to MATIC Swap</h2>
+    <label for="swap-amount">Amount in USDT:</label>
+    <input type="number" id="swap-amount" placeholder="Enter amount in USDT" min="1" />
+    <button onclick="getCrossChainQuote()">Get Cross-Chain Quote</button>
+    <button onclick="placeOrder()">Place Cross-Chain Order</button>
+    <div id="quote-result"></div>
+    <div id="order-result"></div>
+  </section>
+  
+  
+
+  <!-- Transaction Status Section -->
+  <section id="status-section">
+    <h2>Check Transaction Status</h2>
+    <input type="text" id="transactionHash" placeholder="Enter Transaction Hash">
+    <button onclick="checkTransactionStatus()">Check Status</button>
+    <div id="status-result"></div>
+  </section>
+
+  <!-- Balance Check Section -->
+  <section id="balance-section">
+    <h2>Check Balance</h2>
+    <button onclick="checkBalance()">Check Balance</button>
+    <div id="balance-result"></div>
+  </section>
+
+  <!-- Permissions for Smart Contract -->
+  <section id="approve-section">
+    <h2>Approve Smart Contract</h2>
+    <button onclick="approveToken()">Approve Contract</button>
+    <div id="approve-result"></div>
+  </section>
+
+  <script type="module" src="/app.js"></script>
+
+</body>
+</html>
