@@ -1,12 +1,14 @@
 import { SDK, NetworkEnum } from '@1inch/cross-chain-sdk';
 import Web3 from 'web3';
+import 'dotenv/config';
+
 
 const web3 = new Web3(window.ethereum);
 
 // Initialize the Fusion SDK with the 1inch API
 const sdk = new SDK({
   url: "https://api.1inch.dev/fusion-plus",
-  authKey: "6wfStvXlt0IsyiuntJNzDZmjSbvH5DkM",  // Dev API
+  authKey: process.env.REACT_APP_API_KEY,  // Dev API
   blockchainProvider: {
     signTypedData: async (walletAddress, typedData) => {
       return web3.eth.signTypedData(walletAddress, typedData);
