@@ -1,4 +1,3 @@
-declare const VITE_API_KEY: string;
 import { SDK, NetworkEnum, QuoteParams, OrderParams, TakingFeeInfo, ActiveOrdersResponse, HashLock } from "@1inch/cross-chain-sdk";
 import Web3 from 'web3';
 
@@ -70,6 +69,7 @@ async function fetchActiveOrders(page: number = 1, limit: number = 5) {
     }
 }
 
+
 // Display orders in HTML
 function displayOrders(orders: any[], elementId: string) {
     const container = document.getElementById(elementId);
@@ -135,6 +135,9 @@ async function placeOrder() {
         console.error("Error placing order:", error);
     }
 }
+
+//console.log("Loaded API Key:", apiKey);
+
 
 // Event listeners for buttons
 document.getElementById("connect-wallet-btn")!.addEventListener("click", connectWallet);
