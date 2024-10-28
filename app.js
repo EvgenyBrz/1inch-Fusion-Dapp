@@ -1,6 +1,5 @@
 import { SDK, NetworkEnum } from '@1inch/cross-chain-sdk';
 import Web3 from 'web3';
-import 'dotenv/config';
 
 
 const web3 = new Web3(window.ethereum);
@@ -8,7 +7,7 @@ const web3 = new Web3(window.ethereum);
 // Initialize the Fusion SDK with the 1inch API
 const sdk = new SDK({
   url: "https://api.1inch.dev/fusion-plus",
-  authKey: process.env.REACT_APP_API_KEY,  // Dev API
+  authKey: import.meta.env.VITE_API_KEY,  // Dev API
   blockchainProvider: {
     signTypedData: async (walletAddress, typedData) => {
       return web3.eth.signTypedData(walletAddress, typedData);
@@ -95,18 +94,36 @@ window.placeOrder = async function() {
   }
 }
 
-// Connection to MetaMask
+let isConnecting = false;
+
+// Utility to delay reconnection attempts
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Connection to MetaMask with delay on failure
 async function connectMetaMask() {
+  if (isConnecting) return;
+  isConnecting = true;
+
   if (window.ethereum) {
     try {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       console.log('Connected to MetaMask');
     } catch (error) {
+      if (error.code === -32002) {
+        console.warn("MetaMask is already processing connection. Retrying in 2 seconds...");
+        await delay(2000);  // Delay before retrying
+        isConnecting = false; // Allow reconnect attempts
+        return;
+      }
       console.error('MetaMask connection failed', error);
     }
   } else {
     alert('MetaMask is not installed!');
   }
+
+  isConnecting = false;
 }
 
 connectMetaMask();

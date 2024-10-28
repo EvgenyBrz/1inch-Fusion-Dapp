@@ -1,50 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>1inch Fusion+ Cross-Chain Swap App</title>
-  <!-- Include Web3.js -->
-  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1inch Fusion+ Cross-Chain Swap</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 920px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .header {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: right;
+            float: right;
+        }
+        .wallet-info {
+            float: left;
+            display: flex;
+            align-items: center;
+        }
+        .wallet-info label {
+            font-size: 15px;
+            margin-right: 10px;
+        }
+        .small-address-box {
+            padding: 5px;
+            border: 1px solid #000;
+            border-radius: 4px;
+            margin-right: 10px;
+            text-align: center;
+            width: 120px;
+            font-size: 14px;
+        }
+        .small-button {
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #000;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .button {
+            padding: 5px 10px;
+            margin-left: 0px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #000;
+            display: inline-block;
+        }
+        .actions, .swap-section, .order-info, .transaction-status {
+            margin-top: 20px;
+        }
+        .swap-section {
+            font-weight: bold;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .input-group label {
+            width: 60px;
+        }
+        .amount-currency-container {
+            display: flex;
+            align-items: center;
+            margin-left:10px;
+            margin-right:10px;
+            border: 1px solid #000;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .amount-currency-container input {
+            padding: 5px;
+            border: none;
+            width: 80px;
+            text-align: right;
+        }
+        .currency-dropdown {
+            padding: 5px;
+            border: none;
+            text-align: center;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+        .readonly-text {
+            margin-right: 17px;
+            margin-left: 63px;
+            font-size: 14px;
+            color: #333;
+            text-align: center;
+            width: 100px;
+        }
+        .quote, .balance-display, .order-hash {
+            font-size: 12px;
+            color: #333;
+            text-align: center;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .empty-field {
+            margin-top: 10px;
+            padding: 10px;
+            width: 150px;
+            border: 1px solid #000;
+            border-radius: 4px;
+            text-align: center;
+            color: #333;
+            background-color: #f9f9f9;
+            font-size: 14px;
+        }
+        .quote-box, .hash-box {
+            margin-top: 0px;
+            padding: 10px;
+            width: 250px;
+            border: 1px solid #999;
+            border-radius: 4px;
+            text-align: center;
+            color: #333;
+            background-color: #f9f9f9;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        .arrow {
+            display: inline-block;
+            margin: 0 15px;
+            font-size: 20px;
+            vertical-align: middle;
+        }
+        .swap {
+            width: 400px;
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+        }
+        .order-hash-input {
+            width: 160px;
+            margin-right: 10px;
+            padding: 5px;
+            border: 1px solid #000;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-  <h1>1inch Fusion+ Cross-Chain Swap App</h1>
-  
-  <section id="quote-section">
-    <h2>Cross-Chain USDC to MATIC Swap</h2>
-    <label for="swap-amount">Amount in USDC:</label>
-    <input type="number" id="swap-amount" placeholder="Enter amount in USDC" min="1" />
-    <button onclick="getCrossChainQuote()">Get Cross-Chain Quote</button>
-    <button onclick="placeOrder()">Place Cross-Chain Order</button>
-    <div id="quote-result"></div>
-    <div id="order-result"></div>
-  </section>
-  
-  
 
-  <!-- Transaction Status Section -->
-  <section id="status-section">
-    <h2>Check Transaction Status</h2>
-    <input type="text" id="transactionHash" placeholder="Enter Transaction Hash">
-    <button onclick="checkTransactionStatus()">Check Status</button>
-    <div id="status-result"></div>
-  </section>
+<div class="container">
+    <div class="wallet-info">
+        <label>Wallet Address</label>
+        <div class="small-address-box">0x...</div>
+        <div class="small-button">Connect Wallet</div>
+    </div>
+    
+    <div class="header">1inch Fusion+ Cross-Chain Swap App</div>
 
-  <!-- Balance Check Section -->
-  <section id="balance-section">
-    <h2>Check Balance</h2>
-    <button onclick="checkBalance()">Check Balance</button>
-    <div id="balance-result"></div>
-  </section>
+    <div style="clear: both;"></div>
 
-  <!-- Permissions for Smart Contract -->
-  <section id="approve-section">
-    <h2>Approve Smart Contract</h2>
-    <button onclick="approveToken()">Approve Contract</button>
-    <div id="approve-result"></div>
-  </section>
+    <div class="actions">
+        <div class="button">Check Balance</div> 
+        <span class="quote">Redirects to balance page</span><br><br>
+        <div class="button">Check Allowance</div><br>
+        <div class="empty-field"></div>
+        <br>
+        <div class="button">Approve Contract</div>
+    </div>
 
-  <script type="module" src="/app.js"></script>
+    <div class="swap-section">
+        <div>Cross-Chain Swap</div>
+        <div class="input-group">
+            <label>From:</label>
+            <select id="fromNetwork" onchange="updateNetworks()">
+                <option value="Polygon">Polygon</option>
+                <option value="BNB">BNB Smart Chain</option>
+            </select>
+            <div class="amount-currency-container">
+                <input type="text" placeholder="0.00">
+                <select class="currency-dropdown">
+                    <option>USDC</option>
+                    <option>USDT</option>
+                </select>
+            </div>
+            <span class="balance-display">Balance: 0.00</span>
+        </div>
+        <div class="input-group">
+            <label>To:</label>
+            <select id="toNetwork" onchange="updateNetworks()">
+                <option value="BNB">BNB Smart Chain</option>
+                <option value="Polygon">Polygon</option>
+            </select>
+            <span class="readonly-text">0.00 USDT</span>
+            <span class="balance-display">Balance: 0.00</span>
+        </div>
+        <div class="input-group">
+            <div class="button">Get Quote</div>
+            <span class="arrow">→</span>
+            <div class="quote-box">Your quote will appear here</div>
+        </div>
+        <div class="button swap">Swap</div>
+    </div>
+
+    <div class="order-info">
+        <div>Order Hash:</div>
+        <div class="hash-box">Your order hash will appear here</div>
+    </div>
+
+    <div class="transaction-status">
+        <div>Check Transaction Status</div>
+        <div class="input-group">
+            <input type="text" placeholder="Enter order hash" class="order-hash-input">
+            <div class="button">Check Status</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateNetworks() {
+        const fromNetwork = document.getElementById("fromNetwork");
+        const toNetwork = document.getElementById("toNetwork");
+
+        // If the selected "From" network is the same as the "To" network, switch the "To" network to the other option
+        if (fromNetwork.value === toNetwork.value) {
+            toNetwork.value = fromNetwork.value === "Polygon" ? "BNB" : "Polygon";
+        }
+
+        // Enable all options in the "To" dropdown first
+        Array.from(toNetwork.options).forEach(option => {
+            option.disabled = false;
+        });
+
+        // Disable the selected "From" network option in the "To" dropdown
+        Array.from(toNetwork.options).forEach(option => {
+            if (option.value === fromNetwork.value) {
+                option.disabled = true;
+            }
+        });
+    }
+</script>
 
 </body>
 </html>
