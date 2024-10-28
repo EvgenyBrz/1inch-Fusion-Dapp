@@ -153,73 +153,74 @@
 </head>
 <body>
 
-<div class="container">
-    <div class="wallet-info">
-        <label>Wallet Address</label>
-        <div class="small-address-box">0x...</div>
-        <div class="small-button">Connect Wallet</div>
+    <div class="container">
+        <div class="wallet-info">
+            <label>Wallet Address</label>
+            <div id="wallet-address" class="small-address-box">0x...</div>
+            <button id="connect-wallet-btn" class="small-button">Connect Wallet</button>
+        </div>
+        
+        <div class="header">1inch Fusion+ Cross-Chain Swap App</div>
+    
+        <div style="clear: both;"></div>
+    
+        <div class="actions">
+            <button id="fetch-orders-btn" class="button">Check Balance</button> 
+            <span class="quote">Redirects to balance page</span><br><br>
+            <button id="check-allowance-btn" class="button">Check Allowance</button><br>
+            <div class="empty-field"></div>
+            <br>
+            <button id="approve-contract-btn" class="button">Approve Contract</button>
+        </div>
+    
+        <div class="swap-section">
+            <div>Cross-Chain Swap</div>
+            <div class="input-group">
+                <label>From:</label>
+                <select id="fromNetwork" onchange="updateNetworks()">
+                    <option value="Polygon">Polygon</option>
+                    <option value="BNB">BNB Smart Chain</option>
+                </select>
+                <div class="amount-currency-container">
+                    <input type="text" id="swap-amount" placeholder="0.00">
+                    <select id="from-token" class="currency-dropdown">
+                        <option value="USDC">USDC</option>
+                        <option value="USDT">USDT</option>
+                    </select>
+                </div>
+                <span class="balance-display">Balance: 0.00</span>
+            </div>
+            <div class="input-group">
+                <label>To:</label>
+                <select id="toNetwork" onchange="updateNetworks()">
+                    <option value="BNB">BNB Smart Chain</option>
+                    <option value="Polygon">Polygon</option>
+                </select>
+                <span class="readonly-text">0.00 USDT</span>
+                <span class="balance-display">Balance: 0.00</span>
+            </div>
+            <div class="input-group">
+                <button id="get-quote-btn" class="button">Get Quote</button>
+                <span class="arrow">→</span>
+                <div id="quote-result" class="quote-box">Your quote will appear here</div>
+            </div>
+            <button id="place-order-btn" class="swap button">Swap</button>
+        </div>
+    
+        <div class="order-info">
+            <div>Order Hash:</div>
+            <div id="order-result" class="hash-box">Your order hash will appear here</div>
+        </div>
+    
+        <div class="transaction-status">
+            <div>Check Transaction Status</div>
+            <div class="input-group">
+                <input type="text" placeholder="Enter order hash" class="order-hash-input">
+                <button id="check-status-btn" class="button">Check Status</button>
+            </div>
+        </div>
     </div>
     
-    <div class="header">1inch Fusion+ Cross-Chain Swap App</div>
-
-    <div style="clear: both;"></div>
-
-    <div class="actions">
-        <div class="button">Check Balance</div> 
-        <span class="quote">Redirects to balance page</span><br><br>
-        <div class="button">Check Allowance</div><br>
-        <div class="empty-field"></div>
-        <br>
-        <div class="button">Approve Contract</div>
-    </div>
-
-    <div class="swap-section">
-        <div>Cross-Chain Swap</div>
-        <div class="input-group">
-            <label>From:</label>
-            <select id="fromNetwork" onchange="updateNetworks()">
-                <option value="Polygon">Polygon</option>
-                <option value="BNB">BNB Smart Chain</option>
-            </select>
-            <div class="amount-currency-container">
-                <input type="text" placeholder="0.00">
-                <select class="currency-dropdown">
-                    <option>USDC</option>
-                    <option>USDT</option>
-                </select>
-            </div>
-            <span class="balance-display">Balance: 0.00</span>
-        </div>
-        <div class="input-group">
-            <label>To:</label>
-            <select id="toNetwork" onchange="updateNetworks()">
-                <option value="BNB">BNB Smart Chain</option>
-                <option value="Polygon">Polygon</option>
-            </select>
-            <span class="readonly-text">0.00 USDT</span>
-            <span class="balance-display">Balance: 0.00</span>
-        </div>
-        <div class="input-group">
-            <div class="button">Get Quote</div>
-            <span class="arrow">→</span>
-            <div class="quote-box">Your quote will appear here</div>
-        </div>
-        <div class="button swap">Swap</div>
-    </div>
-
-    <div class="order-info">
-        <div>Order Hash:</div>
-        <div class="hash-box">Your order hash will appear here</div>
-    </div>
-
-    <div class="transaction-status">
-        <div>Check Transaction Status</div>
-        <div class="input-group">
-            <input type="text" placeholder="Enter order hash" class="order-hash-input">
-            <div class="button">Check Status</div>
-        </div>
-    </div>
-</div>
 
 <script>
     function updateNetworks() {
@@ -244,6 +245,8 @@
         });
     }
 </script>
+
+<script type="module" src="/main.ts"></script>
 
 </body>
 </html>
