@@ -1,12 +1,14 @@
 import { SDK, NetworkEnum, QuoteParams, OrderParams, TakingFeeInfo, ActiveOrdersResponse, HashLock } from "@1inch/cross-chain-sdk";
 import Web3 from 'web3';
 
+const apiKey = VITE_API_KEY;
+const apiBaseUrl = VITE_API_BASE_URL || "https://default.api.url";
+
 // Initialize Web3 and SDK (replace VITE_API_KEY manually if needed)
 const web3 = new Web3(window.ethereum);
-const apiKey = VITE_API_KEY; // Replace with actual key or process.env if available
 
 const sdk = new SDK({
-    url: "https://api.1inch.dev/fusion-plus",
+    url: apiBaseUrl,
     authKey: apiKey,
     blockchainProvider: {
         signTypedData: async (walletAddress: string, typedData: any) => {
@@ -87,14 +89,26 @@ function displayOrders(orders: any[], elementId: string) {
 // Get a cross-chain quote
 async function getCrossChainQuote() {
     const amount = (document.getElementById("swap-amount") as HTMLInputElement).value;
-    const fromTokenAddress = (document.getElementById("from-token") as HTMLInputElement).value;
-    const toTokenAddress = (document.getElementById("to-token") as HTMLInputElement).value;
+    const fromToken = (document.getElementById("from-token") as HTMLSelectElement).value;
+    const toToken = (document.getElementById("to-token") as HTMLSelectElement).value;
+    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value;
+    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value;
+
+    const chainIds = {
+        Polygon: NetworkEnum.POLYGON,
+        BNB: NetworkEnum.BSC
+    };
+
+    const tokenAddresses = {
+        Polygon: { USDC: "0x...Polygon_USDC_Address", USDT: "0x...Polygon_USDT_Address" },
+        BNB: { USDC: "0x...BNB_USDC_Address", USDT: "0x...BNB_USDT_Address" }
+    };
 
     const params: QuoteParams = {
-        srcChainId: NetworkEnum.ETHEREUM,
-        dstChainId: NetworkEnum.POLYGON,
-        srcTokenAddress: fromTokenAddress,
-        dstTokenAddress: toTokenAddress,
+        srcChainId: chainIds[fromNetwork],
+        dstChainId: chainIds[toNetwork],
+        srcTokenAddress: tokenAddresses[fromNetwork][fromToken],
+        dstTokenAddress: tokenAddresses[toNetwork][toToken],
         amount: web3.utils.toWei(amount, "ether")
     };
 
@@ -105,6 +119,7 @@ async function getCrossChainQuote() {
         console.error("Error fetching quote:", error);
     }
 }
+
 
 // Place an order based on a quote
 async function placeOrder() {
@@ -137,6 +152,8 @@ async function placeOrder() {
 }
 
 //console.log("Loaded API Key:", apiKey);
+console.log("API Base URL:", apiBaseUrl);
+
 
 
 // Event listeners for buttons
