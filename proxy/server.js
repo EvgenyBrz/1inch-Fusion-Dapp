@@ -11,48 +11,26 @@ const PORT = process.env.PROXY_PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// HTTPS agent to bypass SSL verification
-const agent = new https.Agent({
-    rejectUnauthorized: false // Disable SSL certificate verification
-});
+const https = require('https');
 
-// Health check route to verify the proxy and API key
-app.get('/api/test-connection', async (req, res) => {
-    try {
-        const response = await axios.get('https://api.1inch.dev/fusion-plus', {
-            headers: { 'Authorization': `Bearer ${process.env.VITE_API_KEY}` },
-            httpsAgent: agent // Use the agent for SSL bypass
-        });
-        res.status(response.status).json({ success: true, data: response.data });
-    } catch (error) {
-        console.error("API Test Error:", error.message);
-        res.status(error.response?.status || 500).json({ success: false, error: error.message });
-    }
-});
-
-// Proxy endpoint to handle API requests and forward them to the 1inch API
 app.use('/api', async (req, res) => {
     try {
-        // Format URL to match 1inch API endpoint
-        const url = `https://api.1inch.dev/fusion-plus${req.originalUrl.replace('/api', '')}`;
-        console.log("Forwarding request to:", url);
-        console.log("Authorization header being sent:", `Bearer ${process.env.VITE_API_KEY}`);
-
+        const targetUrl = `https://api.1inch.dev${req.originalUrl.replace('/api', '')}`;
         const response = await axios({
             method: req.method,
-            url,
+            url: targetUrl,
             headers: {
-                'Authorization': `Bearer ${process.env.VITE_API_KEY}`
+                'Authorization': `Bearer ${process.env.VITE_API_KEY}`,
             },
             data: req.body,
-            httpsAgent: agent // Use the agent for SSL bypass
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false, // Disable SSL certificate verification
+            }),
         });
-
-        // Respond with the data from 1inch API
         res.status(response.status).json(response.data);
     } catch (error) {
-        console.error("Error in proxy:", error.message);
-        res.status(error.response?.status || 500).json({ error: error.message });
+        console.error("Error:", error.response ? error.response.data : error.message);
+        res.status(error.response ? error.response.status : 500).json({ error: error.message });
     }
 });
 

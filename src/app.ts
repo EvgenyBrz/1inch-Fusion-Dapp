@@ -4,26 +4,7 @@ import { connectWallet, showBalance, initializeWallet } from './wallet';
 import {env} from "process";
 
 const apiKey = import.meta.env.VITE_API_KEY;
-const apiBaseUrl = "http://localhost:3000/api";
-
-async function testProxyConnection() {
-    try {
-        const response = await fetch(`${apiBaseUrl}/test-connection`);
-        const data = await response.json();
-        console.log("Proxy Connection Test:", data);
-        if (data.success) {
-            console.log("Proxy and API connection successful!");
-        } else {
-            console.error("Proxy connection failed:", data.error);
-        }
-    } catch (error) {
-        console.error("Test Proxy Connection Error:", error);
-    }
-}
-
-// Run this once to test proxy connectivity
-testProxyConnection();
-
+const apiBaseUrl = VITE_API_BASE_URL || "http://localhost:3000/api";
 
 // Initialize Web3 and SDK (replace VITE_API_KEY manually if needed)
 const web3 = new Web3(window.ethereum);
@@ -40,6 +21,7 @@ const sdk = new SDK({
         }
     }
 });
+
 
 // Utility function to generate random bytes as hash lock and secret hashes
 function generateRandomBytes32(): string {
@@ -104,8 +86,14 @@ async function getCrossChainQuote() {
     };
 
     const tokenAddresses = {
-        Polygon: { USDC: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F" },
-        BNB: { USDC: "0x8965349fb649A33a30cbFDa057D8eC2C48AbE2A2", USDT: "0x524bC91Dc82d6b90EF29F76A3ECAaBAffFD490Bc" }
+        Polygon: {
+            USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        BNB: {
+            USDC: "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+            USDT: "0x55d398326f99059fF775485246999027B3197955"
+        }
     };
 
     const params: QuoteParams = {
@@ -123,6 +111,7 @@ async function getCrossChainQuote() {
         console.error("Error fetching quote:", error);
     }
 }
+
 
 
 // Place an order based on a quote
