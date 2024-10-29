@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  proxy:
+    build:
+      context: ./proxy
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - PORT=3000
+    restart: unless-stopped

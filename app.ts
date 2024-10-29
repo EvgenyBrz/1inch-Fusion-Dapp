@@ -154,6 +154,10 @@ async function placeOrder() {
 //console.log("Loaded API Key:", apiKey);
 console.log("API Base URL:", apiBaseUrl);
 
+fetch(`${apiBaseUrl}/quote?fromTokenAddress=0x...&toTokenAddress=0x...&amount=1000000000000000000`)
+  .then(response => response.json())
+  .then(data => console.log("Proxy Test Response:", data))
+  .catch(error => console.error("Proxy Test Error:", error));
 
 
 // Event listeners for buttons
