@@ -1,7 +1,9 @@
 import { SDK, NetworkEnum, QuoteParams, OrderParams, TakingFeeInfo, ActiveOrdersResponse, HashLock } from "@1inch/cross-chain-sdk";
 import Web3 from 'web3';
+import { connectWallet, showBalance, initializeWallet } from './wallet';
+import {env} from "process";
 
-const apiKey = VITE_API_KEY;
+const apiKey = import.meta.env.VITE_API_KEY;
 const apiBaseUrl = VITE_API_BASE_URL || "https://default.api.url";
 
 // Initialize Web3 and SDK (replace VITE_API_KEY manually if needed)
@@ -26,35 +28,18 @@ function generateRandomBytes32(): string {
         .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Track connection state to prevent multiple requests
-let isConnecting = false;
+window.addEventListener('load', initializeWallet);
 
-async function connectWallet() {
-    if (isConnecting || window.ethereum.selectedAddress) return window.ethereum.selectedAddress;
+// Attach event listener to connect wallet and enable button if connected
+document.getElementById("connect-wallet-btn")?.addEventListener("click", async () => {
+    await connectWallet();
+});
 
-    if (window.ethereum) {
-        isConnecting = true;
-        try {
-            await window.ethereum.request({ method: 'eth_requestAccounts' });
-            const accounts = await web3.eth.getAccounts();
-            const userAddress = accounts[0];
-            document.getElementById("wallet-address")!.textContent = `Connected: ${userAddress}`;
-            return userAddress;
-        } catch (error: any) {
-            if (error.code === -32002) {
-                console.warn("MetaMask is already processing a connection request.");
-                alert("MetaMask is already connecting. Please open MetaMask to complete the request or try again shortly.");
-            } else {
-                console.error("Wallet connection error:", error);
-            }
-        } finally {
-            isConnecting = false;
-        }
-    } else {
-        alert("Please install MetaMask to use this feature.");
-    }
-    return null;
-}
+// Attach event listener to the Check Balance button
+document.getElementById("fetch-orders-btn")?.addEventListener("click", async () => {
+    await showBalance();
+});
+
 
 // Fetch active orders and display them
 async function fetchActiveOrders(page: number = 1, limit: number = 5) {
@@ -136,7 +121,7 @@ async function placeOrder() {
     };
 
     try {
-        const quote = await sdk.getQuote({
+        const quote = await sdk.getQuote(<QuoteParams>{
             srcChainId: NetworkEnum.ETHEREUM,
             dstChainId: NetworkEnum.POLYGON,
             srcTokenAddress: "TOKEN_ADDRESS_ETH",
