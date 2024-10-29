@@ -1,1 +1,1 @@
-import './app.ts';
+import './src/app';

@@ -26,8 +26,8 @@
     // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
 
     /* Modules */
-    "module": "NodeNext",   
-    "moduleResolution": "NodeNext",                             /* Specify what module code is generated. */
+    "module": "es2022",   
+    "moduleResolution": "Node",                             /* Specify what module code is generated. */
     "types": ["vite/client"],
     // "rootDir": "./",                                  /* Specify the root folder within your source files. */
     // "moduleResolution": "node10",                     /* Specify how TypeScript looks up a file from a given module specifier. */
