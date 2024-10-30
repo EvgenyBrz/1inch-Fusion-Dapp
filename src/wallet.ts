@@ -22,7 +22,6 @@ export async function connectWallet(): Promise<string | null> {
     if (isConnecting || window.ethereum.selectedAddress) {
         const savedAddress = window.ethereum.selectedAddress || localStorage.getItem('walletAddress');
         if (savedAddress) {
-            checkBalanceButton.disabled = false;
             walletAddressElement!.textContent = `Connected: ${parseUserAddress(savedAddress)}`;
             return savedAddress;
         }
@@ -60,18 +59,36 @@ function parseUserAddress(userAddress: string): string {
     return `${userAddress.slice(0, 3)}...${userAddress.slice(-4)}`;
 }
 
-// Fetch and display wallet balance in a popup
-export async function showBalance(): Promise<void> {
-    const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
-    const userAddress = accounts[0];
-    const balance = await window.ethereum.request({
-        method: 'eth_getBalance',
-        params: [userAddress, 'latest']
-    }) as string;
+// Fetch and display wallet balance using the 1inch API
+export async function fetch1inchBalance(): Promise<void> {
+    const apiUrl = `http://localhost:3000/api/balance`; // Use your proxy server's endpoint
+    const chainId = 1; // Mainnet ID for Ethereum; update if using a different chain
+    const userAddress = await connectWallet();
+    if (!userAddress) {
+        alert("Wallet not connected");
+        return;
+    }
+    try {
+        const response = await fetch(`${apiUrl}?walletAddress=${userAddress}&chainId=${chainId}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch balance: ${response.statusText}`);
+        }
 
-    // Convert balance from Wei to Ether using web3.utils.fromWei
-    const etherBalance = web3.utils.fromWei(balance, 'ether');
-    alert(`Balance: ${parseFloat(etherBalance).toFixed(4)} ETH`);
+        const balances = await response.json();
+        console.log("Raw response from 1inch API:", balances); // Debug log
+
+        // Process balances
+        const balanceText = Object.entries(balances)
+            .map(([token, amount]) => {
+                // Ensure amount is a valid number before converting
+                return `${token}: ${parseFloat(web3.utils.fromWei(amount as string, 'ether')).toFixed(4)}`;
+            })
+            .join('\n');
+        alert(`Token Balances:\n${balanceText}`);
+    } catch (error) {
+        console.error("Error fetching balances from proxy server:", error);
+        alert("Failed to fetch token balances. Check console for details.");
+    }
 }
 
 // Initialize wallet connection state on page load
