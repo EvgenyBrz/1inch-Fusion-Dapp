@@ -1,12 +1,11 @@
 import { SDK, NetworkEnum, QuoteParams, OrderParams, TakingFeeInfo, ActiveOrdersResponse, HashLock } from "@1inch/cross-chain-sdk";
 import Web3 from 'web3';
-import {connectWallet, showBalance, initializeWallet, fetch1inchBalance} from './wallet';
-import {env} from "process";
+import { connectWallet, initializeWallet, fetch1inchBalance } from './wallet';
 
 const apiKey = import.meta.env.VITE_API_KEY;
 const apiBaseUrl = "http://localhost:3000/api";
 
-// Initialize Web3 and SDK (replace VITE_API_KEY manually if needed)
+// Initialize Web3 and SDK
 const web3 = new Web3(window.ethereum);
 
 const sdk = new SDK({
@@ -22,20 +21,18 @@ const sdk = new SDK({
     }
 });
 
-
 // Utility function to generate random bytes as hash lock and secret hashes
 function generateRandomBytes32(): string {
     return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
         .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-window.addEventListener('load', initializeWallet);
+// Initialize wallet on DOM load
+window.addEventListener('DOMContentLoaded', initializeWallet);
 
 function getCrossChainQuote() {}
-function placeOrder(){}
+function placeOrder() {}
 
-
-//console.log("Loaded API Key:", apiKey);
 console.log("API Base URL:", apiBaseUrl);
 
 // Event listeners for buttons
