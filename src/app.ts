@@ -38,14 +38,35 @@ window.addEventListener('DOMContentLoaded', initializeWallet);
 //}
 
 // Function to get cross-chain quote
-// Function to get cross-chain quote
 async function getCrossChainQuote() {
-    // Hardcoded values for testing
-    const srcChain = 56; // BNB Chain ID
-    const dstChain = 137; // Polygon Chain ID
-    const srcTokenAddress = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"; // Example USDC on BNB
-    const dstTokenAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"; // Example USDT on Polygon
-    const amount = 1000000000000000000; // Hardcoded 1 USDC in Wei as a string
+    // Define mappings for chain IDs and token addresses
+    const chainIds = { "Polygon": 137, "BNB": 56 };
+    const tokenAddresses = {
+        "Polygon": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // Example USDT on Polygon
+        "BNB": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"   // Example USDC on BNB Chain
+    };
+
+    // Retrieve user-selected values
+    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value;
+    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value;
+    const srcTokenAddress = (document.getElementById("from-token") as HTMLSelectElement).value;
+    const amount = (document.getElementById("swap-amount") as HTMLInputElement).value;
+
+    // Validate the amount input
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        alert("Please enter a valid amount greater than zero.");
+        return;
+    }
+
+    // Convert human-readable amount to Wei (assuming 18 decimals)
+    const amountInWei = BigInt(parseFloat(amount) * 10 ** 18).toString();
+
+    // Set srcChain and dstChain based on the network selections
+    const srcChain = chainIds[fromNetwork];
+    const dstChain = chainIds[toNetwork];
+
+    // Dynamically set dstTokenAddress based on toNetwork selection
+    const dstTokenAddress = tokenAddresses[toNetwork];
 
     // Ensure wallet address is connected
     if (!fullWalletAddress) {
@@ -53,25 +74,25 @@ async function getCrossChainQuote() {
         return;
     }
 
-    console.log("Sending quote request with parameters:", {
-        srcChain,
-        dstChain,
-        srcTokenAddress,
-        dstTokenAddress,
-        amount,
-        walletAddress: fullWalletAddress
-    });
+    // Construct the API request URL
+    const apiUrl = `${apiBaseUrl}/quote?srcChain=${srcChain}&dstChain=${dstChain}&srcTokenAddress=${srcTokenAddress}&dstTokenAddress=${dstTokenAddress}&amount=${amountInWei}&walletAddress=${fullWalletAddress}&enableEstimate=true`;
+
+    console.log("Sending quote request with URL:", apiUrl);
 
     try {
-        // Fetch with hardcoded values
-        const response = await fetch(
-            `${apiBaseUrl}/quote?srcChain=${srcChain}&dstChain=${dstChain}&srcTokenAddress=${srcTokenAddress}&dstTokenAddress=${dstTokenAddress}&amount=${amount}&walletAddress=${fullWalletAddress}&enableEstimate=true`
-        );
+        // Fetch with dynamic values
+        const response = await fetch(apiUrl);
 
         const data = await response.json();
 
         if (response.ok) {
-            (document.getElementById("quote-result") as HTMLElement).textContent = `Quote: ${JSON.stringify(data)}`;
+            // Extract the amount to be paid in the destination token
+            // Assuming 'dstTokenAmount' is the field in the response that holds this information
+            const dstTokenAmountWei = data.dstTokenAmount || "0"; // Use appropriate field name
+            const dstTokenAmount = parseFloat(Web3.utils.fromWei(dstTokenAmountWei, 'ether')).toFixed(6);
+
+            // Display the formatted amount
+            (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Pay in Destination Token: ${dstTokenAmount} Tokens`;
         } else {
             console.error("Error fetching quote:", data.error);
             (document.getElementById("quote-result") as HTMLElement).textContent = `Error: ${data.error}`;
@@ -81,8 +102,6 @@ async function getCrossChainQuote() {
         (document.getElementById("quote-result") as HTMLElement).textContent = "Error fetching quote. Please check the console for details.";
     }
 }
-
-
 
 
 // Placeholder function for placing an order

@@ -49,25 +49,32 @@ app.use('/api/balance', async (req, res) => {
 });
 
 app.get('/api/quote', async (req, res) => {
-    const { fromNetwork, toNetwork, fromToken, swapAmount, walletAddress } = req.query;
+    // Log the entire query object to see what was received
+    console.log("Received query params:", req.query);
 
-    // Mapping of networks to chain IDs
-    const chainIds = {
-        Polygon: 137,
-        BNB: 56
-    };
+    // Destructure and convert query parameters as needed
+    const srcChain = Number(req.query.srcChain);
+    const dstChain = Number(req.query.dstChain);
+    const srcTokenAddress = req.query.srcTokenAddress;
+    const dstTokenAddress = req.query.dstTokenAddress;
+    const amount = req.query.amount;
+    const walletAddress = req.query.walletAddress;
+    const enableEstimate = req.query.enableEstimate === 'true'; // Convert to boolean
 
     // Constructing the API endpoint with parameters
     const targetUrl = 'https://api.1inch.dev/fusion-plus/quoter/v1.0/quote/receive';
     const params = {
-        srcChain: chainIds[fromNetwork],
-        dstChain: chainIds[toNetwork],
-        srcTokenAddress: fromToken,
-        dstTokenAddress: fromToken,  // Adjust this if different destination tokens are needed
-        amount: swapAmount,
+        srcChain,
+        dstChain,
+        srcTokenAddress,
+        dstTokenAddress,
+        amount,
         walletAddress,
-        enableEstimate: true // Enable estimation to get a quote ID
+        enableEstimate
     };
+
+    // Log the parameters to verify correctness
+    console.log("Requesting quote with params:", params);
 
     try {
         const response = await axios.get(targetUrl, {
@@ -92,6 +99,8 @@ app.get('/api/quote', async (req, res) => {
         });
     }
 });
+
+
 
 // Start the proxy server
 app.listen(PORT, () => {
