@@ -40,15 +40,15 @@ window.addEventListener('DOMContentLoaded', initializeWallet);
 // Function to get cross-chain quote
 async function getCrossChainQuote() {
     // Define mappings for chain IDs and token addresses
-    const chainIds = { "Polygon": 137, "BNB": 56 };
-    const tokenAddresses = {
-        "Polygon": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // Example USDT on Polygon
-        "BNB": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"   // Example USDC on BNB Chain
-    };
+    const chainIds = { Polygon: 137, BNB: 56 } as const;
+const tokenAddresses = {
+    Polygon: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // Example USDT on Polygon
+    BNB: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"   // Example USDC on BNB Chain
+} as const;
 
     // Retrieve user-selected values
-    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value;
-    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value;
+    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value as keyof typeof chainIds;
+    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value as keyof typeof chainIds;
     const srcTokenAddress = (document.getElementById("from-token") as HTMLSelectElement).value;
     const amount = (document.getElementById("swap-amount") as HTMLInputElement).value;
 
