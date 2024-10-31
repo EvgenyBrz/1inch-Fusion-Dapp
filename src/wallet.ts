@@ -3,6 +3,8 @@ import Web3 from 'web3';
 declare let window: any;
 
 let web3: typeof Web3;
+let fullWalletAddress: string | null = null; // Stores the full wallet address for API requests
+let isConnecting = false;
 
 if (window.ethereum) {
     web3 = new Web3(window.ethereum);
@@ -11,18 +13,17 @@ if (window.ethereum) {
     throw new Error("MetaMask not detected");
 }
 
-let isConnecting = false;
-
 // Connect wallet and enable Check Balance button if connected
 export async function connectWallet(): Promise<string | null> {
     const walletAddressElement = document.getElementById("wallet-address");
     const checkBalanceButton = document.getElementById("check-balance-btn") as HTMLButtonElement;
 
     if (isConnecting || (await window.ethereum.request({ method: 'eth_accounts' }))[0]) {
-        const savedAddress = (await window.ethereum.request({ method: 'eth_accounts' }))[0] || localStorage.getItem('walletAddress');
-        if (savedAddress) {
-            walletAddressElement!.textContent = `Connected: ${parseUserAddress(savedAddress)}`;
-            return savedAddress;
+        fullWalletAddress = (await window.ethereum.request({ method: 'eth_accounts' }))[0] || localStorage.getItem('walletAddress');
+        if (fullWalletAddress) {
+            walletAddressElement!.textContent = `Connected: ${parseUserAddress(fullWalletAddress)}`;
+            checkBalanceButton.disabled = false;
+            return fullWalletAddress;
         }
     }
 
@@ -31,12 +32,12 @@ export async function connectWallet(): Promise<string | null> {
         try {
             await window.ethereum.request({ method: 'eth_requestAccounts' });
             const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
-            const userAddress = accounts[0];
+            fullWalletAddress = accounts[0];
 
-            localStorage.setItem('walletAddress', userAddress);
+            localStorage.setItem('walletAddress', fullWalletAddress);
             checkBalanceButton.disabled = false;
-            walletAddressElement!.textContent = `Connected: ${parseUserAddress(userAddress)}`;
-            return userAddress;
+            walletAddressElement!.textContent = `Connected: ${parseUserAddress(fullWalletAddress)}`;
+            return fullWalletAddress;
         } catch (error: any) {
             if (error.code === -32002) {
                 console.warn("MetaMask is already processing a connection request.");
@@ -53,26 +54,28 @@ export async function connectWallet(): Promise<string | null> {
     return null;
 }
 
-// Function to parse the address
+// Function to parse the address for display (truncated)
 function parseUserAddress(userAddress: string): string {
-    return `${userAddress.slice(0, 3)}...${userAddress.slice(-4)}`;
+    return `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
 }
 
 // Fetch and display wallet balance using the 1inch API
 export async function fetch1inchBalance(): Promise<void> {
     const apiUrl = `http://localhost:3000/api/balance`; // Use your proxy server's endpoint
     const chainId = 1; // Mainnet ID for Ethereum; update if using a different chain
-    const userAddress = await connectWallet();
-    
-    if (!userAddress) {
-        alert("Wallet not connected");
-        return;
+
+    if (!fullWalletAddress) {
+        fullWalletAddress = await connectWallet();
+        if (!fullWalletAddress) {
+            alert("Wallet not connected");
+            return;
+        }
     }
 
-    console.log("Fetching balance with walletAddress:", userAddress, "and chainId:", chainId); // Log to verify parameters
+    console.log("Fetching balance with walletAddress:", fullWalletAddress, "and chainId:", chainId); // Log to verify parameters
 
     try {
-        const response = await fetch(`${apiUrl}?walletAddress=${userAddress}&chainId=${chainId}`);
+        const response = await fetch(`${apiUrl}?walletAddress=${fullWalletAddress}&chainId=${chainId}`);
         if (!response.ok) {
             throw new Error(`Failed to fetch balance: ${response.statusText}`);
         }
@@ -99,7 +102,11 @@ export function initializeWallet(): void {
     const savedAddress = localStorage.getItem('walletAddress');
 
     if (savedAddress) {
+        fullWalletAddress = savedAddress;
         checkBalanceButton.disabled = false;
         document.getElementById("wallet-address")!.textContent = `Connected: ${parseUserAddress(savedAddress)}`;
     }
 }
+
+// Export fullWalletAddress for use in other files, such as app.ts
+export { fullWalletAddress };
