@@ -39,7 +39,7 @@ const tokenAddresses = {
 const chainIds = { "Polygon": 137, "BNB": 56 } as const;
 
 // Minimum Swap Amount (adjust as needed)
-const MIN_SWAP_AMOUNT = BigInt(10 ** 9); // Example minimum amount, adjust as needed
+const MIN_SWAP_AMOUNT = BigInt(10 ** 9);
 
 // Utility function to generate random bytes (for hash lock or other purposes)
 function generateRandomBytes32(): string {
@@ -68,7 +68,7 @@ function handleAPIError(data: any) {
 
 // Debounce function to prevent too many API calls
 function debounce(func: Function, delay: number) {
-    let timer: ReturnType<typeof setTimeout>; // Correct the timer type
+    let timer: ReturnType<typeof setTimeout>;
     return function (...args: any[]) {
         clearTimeout(timer);
         timer = setTimeout(() => func(...args), delay);
@@ -103,12 +103,18 @@ const getCrossChainQuote = debounce(async function() {
         return;
     }
 
-    const decimals = 6; // For USDT and USDC
-    const amountInWei = BigInt(amountInFloat * Math.pow(10, decimals)).toString();
-    if (BigInt(amountInWei) < MIN_SWAP_AMOUNT) {
-        alert("The swap amount is too small. Please increase the amount to meet the minimum requirements.");
-        return;
-    }
+    // Assuming decimals represent the token's precision (6 for USDT/USDC)
+const decimals = 6; // For USDT and USDC
+
+// Convert amount to BigInt by scaling first to preserve decimals
+const amountInWei = BigInt(Math.round(amountInFloat * Math.pow(10, decimals)));
+
+// Check if the amount is below the minimum swap amount
+if (amountInWei < MIN_SWAP_AMOUNT) {
+    alert("The swap amount is too small. Please increase the amount to meet the minimum requirements.");
+    return;
+}
+
 
     const srcChain = chainIds[fromNetwork];
     const dstChain = chainIds[toNetwork];
@@ -126,28 +132,15 @@ const getCrossChainQuote = debounce(async function() {
 
         if (response.ok) {
             const dstTokenAmountWei = BigInt(data.dstTokenAmount || "0");
-            // Perform manual division and scaling using BigInt
-            const scalingFactor = BigInt(Math.pow(1000, decimals));
-            const wholePart = dstTokenAmountWei / scalingFactor;
-            console.log(`${wholePart} ${dstTokenAmountWei}`);
-            const fractionalPart = dstTokenAmountWei % scalingFactor;
-
-            // Convert fractional part to a fixed number of decimals for display
-            const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6); // Limit to 6 decimals
-            const dstTokenAmount = `${wholePart}.${fractionalStr}`;
-
 
             // Perform manual division and scaling using BigInt
-            const scalingFactor = BigInt(Math.pow(1000, decimals));
+            const scalingFactor = BigInt(Math.pow(10, decimals));
             const wholePart = dstTokenAmountWei / scalingFactor;
-            console.log(`${wholePart} ${dstTokenAmountWei}`);
             const fractionalPart = dstTokenAmountWei % scalingFactor;
 
-            // Convert fractional part to a fixed number of decimals for display
-            const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6); // Limit to 6 decimals
+            const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6);
             const dstTokenAmount = `${wholePart}.${fractionalStr}`;
 
-            // Display the formatted result
             (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${dstTokenSymbol}`;
         } else {
             handleAPIError(data);
@@ -157,8 +150,6 @@ const getCrossChainQuote = debounce(async function() {
         alert("Error fetching quote. Please check the console for details.");
     }
 }, 1000);
-
-
 
 // Function to handle network changes and update token addresses
 function updateNetworks() {
