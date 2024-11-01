@@ -100,8 +100,6 @@ app.get('/api/quote', async (req, res) => {
     }
 });
 
-
-
 // Start the proxy server
 app.listen(PORT, () => {
     console.log(`Proxy server running on port ${PORT}`);

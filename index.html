@@ -1,104 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <title>1inch Fusion+ Cross-Chain Swap</title>
 </head>
 <body>
 
-    <div class="container">
-        <div class="wallet-info">
-            <label>Wallet Address</label>
-            <div id="wallet-address" class="small-address-box">0x...</div>
-            <button id="connect-wallet-btn" class="small-button">Connect Wallet</button>
-        </div>
-        
-        <div class="header">1inch Fusion+ Cross-Chain Swap App</div>
-    
-        <div style="clear: both;"></div>
-    
-        <div class="actions">
-            <button id="check-balance-btn" class="button">Check Balance</button>
-            <span class="quote">Redirects to balance page</span><br><br>
-            <button id="check-allowance-btn" class="button">Check Allowance</button><br>
-            <div class="empty-field"></div>
-            <br>
-            <button id="approve-contract-btn" class="button">Approve Contract</button>
-        </div>
-    
-        <div class="swap-section">
-            <div>Cross-Chain Swap</div>
-            <div class="input-group">
-                <label>From:</label>
-                <select id="fromNetwork" onchange="updateNetworks()">
-                    <option value="Polygon">Polygon</option>
-                    <option value="BNB">BNB Smart Chain</option>
+<div class="container">
+    <div class="wallet-info">
+        <label>Wallet Address</label>
+        <div id="wallet-address" class="small-address-box">0x...</div>
+        <button id="connect-wallet-btn" class="small-button">Connect Wallet</button>
+    </div>
+
+    <div class="header">1inch Fusion+ Cross-Chain Swap App</div>
+
+    <div class="actions">
+        <button id="check-balance-btn" class="button">Check Balance</button>
+        <span class="quote">Redirects to balance page</span><br><br>
+        <button id="check-allowance-btn" class="button">Check Allowance</button><br>
+        <div class="empty-field"></div>
+        <br>
+        <button id="approve-contract-btn" class="button">Approve Contract</button>
+    </div>
+
+    <div class="swap-section">
+        <div>Cross-Chain Swap</div>
+        <div class="input-group">
+            <label>From:</label>
+            <select id="fromNetwork" onchange="updateNetworkAndTokenSelections()">
+                <option value="Polygon">Polygon</option>
+                <option value="BNB">BNB Smart Chain</option>
+            </select>
+            <div class="amount-currency-container">
+                <input type="text" id="swap-amount" placeholder="0.00">
+                <select id="from-token" class="currency-dropdown" onchange="updateToTokenOptions()">
+                    <option value="USDC">USDC</option>
+                    <option value="USDT">USDT</option>
                 </select>
-                <div class="amount-currency-container">
-                    <input type="text" id="swap-amount" placeholder="0.00">
-                    <select id="from-token" class="currency-dropdown">
-                        <option value="0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359">USDC</option>
-                        <option value="0xdac17f958d2ee523a2206206994597c13d831ec7">USDT</option>
-                    </select>
-                </div>
-                <span class="balance-display">Balance: 0.00</span>
             </div>
-            <div class="input-group">
-                <label>To:</label>
-                <select id="toNetwork" onchange="updateNetworks()">
-                    <option value="BNB">BNB Smart Chain</option>
-                    <option value="Polygon">Polygon</option>
+            <span class="balance-display">Balance: 0.00</span>
+        </div>
+        <div class="input-group">
+            <label>To:</label>
+            <select id="toNetwork" onchange="updateToTokenOptions()" disabled>
+                <option value="BNB">BNB Smart Chain</option>
+                <option value="Polygon">Polygon</option>
+            </select>
+            <div class="amount-currency-container">
+                <select id="to-token" class="currency-dropdown">
+                    <option value="USDC">USDC</option>
+                    <option value="USDT">USDT</option>
                 </select>
-                <span class="readonly-text" id="to-token">0.00 USDT</span>
-                <span class="balance-display">Balance: 0.00</span>
             </div>
-            <div class="input-group">
-                <button id="get-quote-btn" class="button">Get Quote</button>
-                <span class="arrow">→</span>
-                <div id="quote-result" class="quote-box">Your quote will appear here</div>
-            </div>
-            <button id="place-order-btn" class="swap button">Swap</button>
+            <span class="balance-display">Balance: 0.00</span>
         </div>
-    
-        <div class="order-info">
-            <div>Order Hash:</div>
-            <div id="order-result" class="hash-box">Your order hash will appear here</div>
+        <div class="input-group">
+            <button id="get-quote-btn" class="button">Get Quote</button>
+            <div id="quote-result" class="quote-box">Your quote will appear here</div>
         </div>
-    
-        <div class="transaction-status">
-            <div>Check Transaction Status</div>
-            <div class="input-group">
-                <input type="text" placeholder="Enter order hash" class="order-hash-input">
-                <button id="check-status-btn" class="button">Check Status</button>
-            </div>
+        <button id="place-order-btn" class="swap button">Swap</button>
+    </div>
+
+    <div class="order-info">
+        <div>Order Hash:</div>
+        <div id="order-result" class="hash-box">Your order hash will appear here</div>
+    </div>
+
+    <div class="transaction-status">
+        <div>Check Transaction Status</div>
+        <div class="input-group">
+            <input type="text" placeholder="Enter order hash" class="order-hash-input">
+            <button id="check-status-btn" class="button">Check Status</button>
         </div>
     </div>
-    
+</div>
 
 <script>
-    function updateNetworks() {
-        const fromNetwork = document.getElementById("fromNetwork");
-        const toNetwork = document.getElementById("toNetwork");
+    // Mapping for token addresses per chain
+    const tokenAddresses = {
+        "Polygon": {
+            "USDC": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+            "USDT": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "BNB": {
+            "USDC": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+            "USDT": "0x55d398326f99059ff775485246999027b3197955"
+        }
+    };
 
-        // If the selected "From" network is the same as the "To" network, switch the "To" network to the other option
-        if (fromNetwork.value === toNetwork.value) {
-            toNetwork.value = fromNetwork.value === "Polygon" ? "BNB" : "Polygon";
+    // Function to update network and token selections
+    function updateNetworkAndTokenSelections() {
+        const fromNetwork = document.getElementById("fromNetwork").value;
+
+        // Automatically set the opposite network for "To"
+        const toNetwork = fromNetwork === "Polygon" ? "BNB" : "Polygon";
+        document.getElementById("toNetwork").value = toNetwork;
+
+        updateToTokenOptions();
+    }
+
+    // Function to update the "To" token options
+    function updateToTokenOptions() {
+        const fromToken = document.getElementById("from-token").value;
+        const toTokenSelect = document.getElementById("to-token");
+
+        // Clear existing options
+        toTokenSelect.innerHTML = "";
+
+        // Add options based on "From" token
+        if (fromToken === "USDC") {
+            toTokenSelect.innerHTML = `
+                <option value="USDT">USDT</option>
+                <option value="USDC">USDC</option>
+            `;
+        } else {
+            toTokenSelect.innerHTML = `
+                <option value="USDC">USDC</option>
+                <option value="USDT">USDT</option>
+            `;
+        }
+    }
+
+    // Function to get the selected token address based on network and token symbol
+    function getTokenAddress(network, token) {
+        return tokenAddresses[network][token];
+    }
+
+    // Function to prepare API call
+    async function getQuote() {
+        const fromNetwork = document.getElementById("fromNetwork").value;
+        const toNetwork = document.getElementById("toNetwork").value;
+        const fromToken = document.getElementById("from-token").value;
+        const toToken = document.getElementById("to-token").value;
+        const amount = document.getElementById("swap-amount").value;
+
+        // Retrieve actual token addresses using the getTokenAddress function
+        const srcTokenAddress = getTokenAddress(fromNetwork, fromToken);
+        const dstTokenAddress = getTokenAddress(toNetwork, toToken);
+
+        // Validate the addresses
+        if (!srcTokenAddress || !dstTokenAddress) {
+            console.error("Invalid token address:", { srcTokenAddress, dstTokenAddress });
+            alert("Failed to retrieve token addresses. Please try again.");
+            return;
         }
 
-        // Enable all options in the "To" dropdown first
-        Array.from(toNetwork.options).forEach(option => {
-            option.disabled = false;
+        // Validate amount
+        if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            alert("Please enter a valid amount greater than zero.");
+            return;
+        }
+
+        const srcChainId = fromNetwork === "Polygon" ? 137 : 56;
+        const dstChainId = toNetwork === "Polygon" ? 137 : 56;
+        const amountInWei = BigInt(parseFloat(amount) * 10 ** 6).toString(); // Adjust for 6 decimals if necessary
+
+        // Log the parameters for debugging
+        console.log("API call parameters:", {
+            srcChain: srcChainId,
+            dstChain: dstChainId,
+            srcTokenAddress,
+            dstTokenAddress,
+            amount: amountInWei,
+            walletAddress: "YOUR_WALLET_ADDRESS",
+            enableEstimate: true
         });
 
-        // Disable the selected "From" network option in the "To" dropdown
-        Array.from(toNetwork.options).forEach(option => {
-            if (option.value === fromNetwork.value) {
-                option.disabled = true;
-            }
-        });
+        // Here you would proceed with making the API call using the correct parameters
+        // Example API call code:
+        // const response = await fetch(`API_ENDPOINT`, {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({
+        //         srcChain: srcChainId,
+        //         dstChain: dstChainId,
+        //         srcTokenAddress,
+        //         dstTokenAddress,
+        //         amount: amountInWei,
+        //         walletAddress: "YOUR_WALLET_ADDRESS",
+        //         enableEstimate: true
+        //     })
+        // });
+        // const data = await response.json();
+        // console.log("API response:", data);
     }
+
+    // Initialize the selections on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        updateNetworkAndTokenSelections();
+        updateToTokenOptions();
+    });
+
+    // Event listeners for changing networks and tokens
+    document.getElementById("fromNetwork").addEventListener("change", updateNetworkAndTokenSelections);
+    document.getElementById("from-token").addEventListener("change", updateToTokenOptions);
+    document.getElementById("get-quote-btn").addEventListener("click", getQuote);
 </script>
 
 <script type="module" src="src/app.ts"></script>
