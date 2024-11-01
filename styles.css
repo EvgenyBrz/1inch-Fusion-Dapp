@@ -19,6 +19,7 @@ body {
     display: flex;
     align-items: center;
 }
+
 .wallet-info label {
     font-size: 15px;
     margin-right: 10px;

@@ -83,18 +83,18 @@ export async function fetch1inchBalance(): Promise<void> {
         const balances = await response.json();
         console.log("Raw response from 1inch API:", balances); // Debug log
 
-        // Process balances
-        const balanceText = Object.entries(balances)
-            .map(([token, amount]) => {
-                return `${token}: ${parseFloat(web3.utils.fromWei(amount as string, 'ether')).toFixed(4)}`;
-            })
-            .join('\n');
-        alert(`Token Balances:\n${balanceText}`);
+        // Process USDT and USDC balances
+        const usdtBalance = balances['USDT'] ? parseFloat(web3.utils.fromWei(balances['USDT'], 'mwei')).toFixed(4) : "0.0000";
+        const usdcBalance = balances['USDC'] ? parseFloat(web3.utils.fromWei(balances['USDC'], 'mwei')).toFixed(4) : "0.0000";
+
+        // Display balances in an alert or popup
+        alert(`Token Balances:\nUSDT: ${usdtBalance}\nUSDC: ${usdcBalance}`);
     } catch (error) {
         console.error("Error fetching balances from proxy server:", error);
         alert("Failed to fetch token balances. Check console for details.");
     }
 }
+
 
 // Initialize wallet connection state on page load
 export function initializeWallet(): void {

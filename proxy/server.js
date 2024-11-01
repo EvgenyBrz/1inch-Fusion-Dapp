@@ -14,7 +14,6 @@ app.use(express.json());
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
-// Endpoint for balance requests on Binance Smart Chain
 app.use('/api/balance', async (req, res) => {
     const { walletAddress, chainId } = req.query;
 
@@ -22,8 +21,14 @@ app.use('/api/balance', async (req, res) => {
     const networkChainId = chainId || '56';
     const targetUrl = `https://api.1inch.dev/balance/v1.2/${networkChainId}/balances/${walletAddress}`;
 
-    // Specify BNB token address for Binance Smart Chain (0xEeee... for BNB)
-    const body = { tokens: ["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"] };
+    // USDT and USDC token addresses
+    const body = {
+        tokens: [
+            "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // ETH
+            "0x55d398326f99059fF775485246999027B3197955", // USDT on BSC
+            "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d"  // USDC on BSC
+        ]
+    };
 
     try {
         const response = await axios.post(targetUrl, body, {
@@ -41,12 +46,13 @@ app.use('/api/balance', async (req, res) => {
         }
     } catch (error) {
         console.error("Error fetching balance from 1inch API:", error.response ? error.response.data : error.message);
-        res.status(error.response ? error.response.status : 500).json({ 
-            error: "Failed to fetch balance from 1inch API", 
-            details: error.response ? error.response.data : error.message 
+        res.status(error.response ? error.response.status : 500).json({
+            error: "Failed to fetch balance from 1inch API",
+            details: error.response ? error.response.data : error.message
         });
     }
 });
+
 
 app.get('/api/quote', async (req, res) => {
     // Log the entire query object to see what was received

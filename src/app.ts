@@ -38,6 +38,9 @@ const tokenAddresses = {
 // Chain IDs
 const chainIds = { "Polygon": 137, "BNB": 56 };
 
+// Minimum Swap Amount (adjust as needed)
+const MIN_SWAP_AMOUNT = BigInt(10 ** 9); // Example minimum amount, adjust as needed
+
 // Utility function to generate random bytes (for hash lock or other purposes)
 function generateRandomBytes32(): string {
     return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
@@ -47,16 +50,13 @@ function generateRandomBytes32(): string {
 // Initialize wallet connection on DOM load
 window.addEventListener('DOMContentLoaded', initializeWallet);
 
-// Minimum Swap Amount (adjust as needed)
-const MIN_SWAP_AMOUNT = BigInt(10 ** 9); // Example minimum amount, adjust as needed
-
 // Error handling function
 function handleAPIError(data: any) {
     const description = data.description || "Unknown error";
     console.error("Error Data:", JSON.stringify(data, null, 2));
 
     if (description.includes("token not supported")) {
-        alert("The selected token is not supported on the selected network. Please try a different token.");
+        alert("The selected token is not supported on the selected network. Please verify the token address or try a different token.");
     } else if (description.includes("swap amount too small")) {
         alert("The swap amount is too small. Please increase the amount to meet the minimum requirements.");
     } else if (description.includes("limit of requests per second")) {
@@ -81,7 +81,7 @@ function checkTokenSupport(srcTokenSymbol: string, fromNetwork: string): boolean
     return supportedTokens ? !!supportedTokens[srcTokenSymbol] : false;
 }
 
-// Function to get a cross-chain quote
+// Main function to fetch cross-chain quotes
 const getCrossChainQuote = debounce(async function() {
     const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value;
     const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value;
@@ -103,8 +103,7 @@ const getCrossChainQuote = debounce(async function() {
         return;
     }
 
-    // Enforce minimum swap amount to avoid "swap amount too small" error
-    const decimals = 6; // Adjust decimals based on the token, if necessary
+    const decimals = 6; // For USDT and USDC
     const amountInWei = BigInt(amountInFloat * Math.pow(10, decimals)).toString();
     if (BigInt(amountInWei) < MIN_SWAP_AMOUNT) {
         alert("The swap amount is too small. Please increase the amount to meet the minimum requirements.");
@@ -126,9 +125,17 @@ const getCrossChainQuote = debounce(async function() {
         const data = await response.json();
 
         if (response.ok) {
-            const dstTokenAmountWei = data.dstTokenAmount || "0";
-            const dstTokenAmount = (parseFloat(dstTokenAmountWei) / Math.pow(10, decimals)).toFixed(6);
-            (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${(document.getElementById("to-token") as HTMLSelectElement).options[(document.getElementById("to-token") as HTMLSelectElement).selectedIndex].text}`;
+            // Get the amount in Wei from the response
+            const dstTokenAmountWei = BigInt(data.dstTokenAmount || "0");
+
+            // Divide by 10^decimals and then round to 6 decimal places
+            const dstTokenAmount = (Number(dstTokenAmountWei) / Math.pow(10, decimals)).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 6,
+            });
+
+            // Display the formatted result
+            (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${dstTokenSymbol}`;
         } else {
             handleAPIError(data);
         }
