@@ -136,6 +136,18 @@ const getCrossChainQuote = debounce(async function() {
             const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6); // Limit to 6 decimals
             const dstTokenAmount = `${wholePart}.${fractionalStr}`;
 
+
+            // Perform manual division and scaling using BigInt
+            const scalingFactor = BigInt(Math.pow(1000, decimals));
+            const wholePart = dstTokenAmountWei / scalingFactor;
+            console.log(`${wholePart} ${dstTokenAmountWei}`);
+            const fractionalPart = dstTokenAmountWei % scalingFactor;
+
+            // Convert fractional part to a fixed number of decimals for display
+            const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6); // Limit to 6 decimals
+            const dstTokenAmount = `${wholePart}.${fractionalStr}`;
+
+            // Display the formatted result
             (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${dstTokenSymbol}`;
         } else {
             handleAPIError(data);
@@ -145,6 +157,7 @@ const getCrossChainQuote = debounce(async function() {
         alert("Error fetching quote. Please check the console for details.");
     }
 }, 1000);
+
 
 
 // Function to handle network changes and update token addresses
