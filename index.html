@@ -12,13 +12,12 @@
         <label>Wallet Address</label>
         <div id="wallet-address" class="small-address-box">0x...</div>
         <button id="connect-wallet-btn" class="small-button">Connect Wallet</button>
+        <button id="check-balance-btn" class="small-button">Check Balance</button>
     </div>
 
     <div class="header">1inch Fusion+ Cross-Chain Swap App</div>
 
     <div class="actions">
-        <button id="check-balance-btn" class="button">Check Balance</button>
-        <span class="quote">Redirects to balance page</span><br><br>
         <button id="check-allowance-btn" class="button">Check Allowance</button><br>
         <div class="empty-field"></div>
         <br>
@@ -90,45 +89,26 @@
         }
     };
 
-    // Function to update network and token selections
     function updateNetworkAndTokenSelections() {
         const fromNetwork = document.getElementById("fromNetwork").value;
-
-        // Automatically set the opposite network for "To"
         const toNetwork = fromNetwork === "Polygon" ? "BNB" : "Polygon";
         document.getElementById("toNetwork").value = toNetwork;
 
         updateToTokenOptions();
     }
 
-    // Function to update the "To" token options
     function updateToTokenOptions() {
         const fromToken = document.getElementById("from-token").value;
         const toTokenSelect = document.getElementById("to-token");
-
-        // Clear existing options
-        toTokenSelect.innerHTML = "";
-
-        // Add options based on "From" token
-        if (fromToken === "USDC") {
-            toTokenSelect.innerHTML = `
-                <option value="USDT">USDT</option>
-                <option value="USDC">USDC</option>
-            `;
-        } else {
-            toTokenSelect.innerHTML = `
-                <option value="USDC">USDC</option>
-                <option value="USDT">USDT</option>
-            `;
-        }
+        toTokenSelect.innerHTML = fromToken === "USDC"
+            ? `<option value="USDT">USDT</option><option value="USDC">USDC</option>`
+            : `<option value="USDC">USDC</option><option value="USDT">USDT</option>`;
     }
 
-    // Function to get the selected token address based on network and token symbol
     function getTokenAddress(network, token) {
         return tokenAddresses[network][token];
     }
 
-    // Function to prepare API call
     async function getQuote() {
         const fromNetwork = document.getElementById("fromNetwork").value;
         const toNetwork = document.getElementById("toNetwork").value;
@@ -136,28 +116,18 @@
         const toToken = document.getElementById("to-token").value;
         const amount = document.getElementById("swap-amount").value;
 
-        // Retrieve actual token addresses using the getTokenAddress function
         const srcTokenAddress = getTokenAddress(fromNetwork, fromToken);
         const dstTokenAddress = getTokenAddress(toNetwork, toToken);
 
-        // Validate the addresses
-        if (!srcTokenAddress || !dstTokenAddress) {
-            console.error("Invalid token address:", { srcTokenAddress, dstTokenAddress });
-            alert("Failed to retrieve token addresses. Please try again.");
-            return;
-        }
-
-        // Validate amount
-        if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-            alert("Please enter a valid amount greater than zero.");
+        if (!srcTokenAddress || !dstTokenAddress || !amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            alert("Please enter valid values.");
             return;
         }
 
         const srcChainId = fromNetwork === "Polygon" ? 137 : 56;
         const dstChainId = toNetwork === "Polygon" ? 137 : 56;
-        const amountInWei = BigInt(parseFloat(amount) * 10 ** 6).toString(); // Adjust for 6 decimals if necessary
+        const amountInWei = BigInt(parseFloat(amount) * 10 ** 6).toString();
 
-        // Log the parameters for debugging
         console.log("API call parameters:", {
             srcChain: srcChainId,
             dstChain: dstChainId,
@@ -167,33 +137,13 @@
             walletAddress: "YOUR_WALLET_ADDRESS",
             enableEstimate: true
         });
-
-        // Here you would proceed with making the API call using the correct parameters
-        // Example API call code:
-        // const response = await fetch(`API_ENDPOINT`, {
-        //     method: "POST",
-        //     headers: { "Content-Type": "application/json" },
-        //     body: JSON.stringify({
-        //         srcChain: srcChainId,
-        //         dstChain: dstChainId,
-        //         srcTokenAddress,
-        //         dstTokenAddress,
-        //         amount: amountInWei,
-        //         walletAddress: "YOUR_WALLET_ADDRESS",
-        //         enableEstimate: true
-        //     })
-        // });
-        // const data = await response.json();
-        // console.log("API response:", data);
     }
 
-    // Initialize the selections on page load
     window.addEventListener('DOMContentLoaded', () => {
         updateNetworkAndTokenSelections();
         updateToTokenOptions();
     });
 
-    // Event listeners for changing networks and tokens
     document.getElementById("fromNetwork").addEventListener("change", updateNetworkAndTokenSelections);
     document.getElementById("from-token").addEventListener("change", updateToTokenOptions);
     document.getElementById("get-quote-btn").addEventListener("click", getQuote);

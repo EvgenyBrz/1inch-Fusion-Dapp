@@ -1,5 +1,6 @@
 import { SDK, NetworkEnum, QuoteParams, OrderParams, TakingFeeInfo, ActiveOrdersResponse, HashLock } from "@1inch/cross-chain-sdk";
 import Web3 from 'web3';
+import BigNumber from 'bignumber.js';
 import { connectWallet, initializeWallet, fetch1inchBalance, fullWalletAddress } from './wallet';
 
 // API configuration
@@ -39,34 +40,9 @@ const tokenAddresses = {
 const chainIds = { "Polygon": 137, "BNB": 56 } as const;
 
 // Minimum Swap Amount (adjust as needed)
-const MIN_SWAP_AMOUNT = BigInt(10 ** 9);
+const MIN_SWAP_AMOUNT = new BigNumber(10 ** 6); // 1 USDT or 1 USDC equivalent in smallest unit
 
-// Utility function to generate random bytes (for hash lock or other purposes)
-function generateRandomBytes32(): string {
-    return '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Initialize wallet connection on DOM load
-window.addEventListener('DOMContentLoaded', initializeWallet);
-
-// Error handling function
-function handleAPIError(data: any) {
-    const description = data.description || "Unknown error";
-    console.error("Error Data:", JSON.stringify(data, null, 2));
-
-    if (description.includes("token not supported")) {
-        alert("The selected token is not supported on the selected network. Please verify the token address or try a different token.");
-    } else if (description.includes("swap amount too small")) {
-        alert("The swap amount is too small. Please increase the amount to meet the minimum requirements.");
-    } else if (description.includes("limit of requests per second")) {
-        alert("You have exceeded the API request rate limit. Please wait a moment and try again.");
-    } else {
-        alert(`API Error: ${description}`);
-    }
-}
-
-// Debounce function to prevent too many API calls
+// Debounce function to limit API requests
 function debounce(func: Function, delay: number) {
     let timer: ReturnType<typeof setTimeout>;
     return function (...args: any[]) {
@@ -75,7 +51,7 @@ function debounce(func: Function, delay: number) {
     };
 }
 
-// Function to check if token is supported
+// Check if token is supported
 function checkTokenSupport(srcTokenSymbol: keyof typeof tokenAddresses["Polygon"], fromNetwork: keyof typeof tokenAddresses): boolean {
     const supportedTokens = tokenAddresses[fromNetwork];
     return supportedTokens ? !!supportedTokens[srcTokenSymbol] : false;
@@ -103,43 +79,36 @@ const getCrossChainQuote = debounce(async function() {
         return;
     }
 
-    // Assuming decimals represent the token's precision (6 for USDT/USDC)
-const decimals = 6; // For USDT and USDC
+    const decimals = 6; // For USDT and USDC
+    const amountInWei = new BigNumber(amountInFloat).multipliedBy(new BigNumber(10).pow(decimals));
 
-// Convert amount to BigInt by scaling first to preserve decimals
-const amountInWei = BigInt(Math.round(amountInFloat * Math.pow(10, decimals)));
-
-// Check if the amount is below the minimum swap amount
-if (amountInWei < MIN_SWAP_AMOUNT) {
-    alert("The swap amount is too small. Please increase the amount to meet the minimum requirements.");
-    return;
-}
-
-
-    const srcChain = chainIds[fromNetwork];
-    const dstChain = chainIds[toNetwork];
+    console.log("API call parameters:", {
+        srcChain: chainIds[fromNetwork],
+        dstChain: chainIds[toNetwork],
+        srcTokenAddress,
+        dstTokenAddress,
+        amount: amountInWei.toFixed(),
+        walletAddress: fullWalletAddress,
+        enableEstimate: true
+    });
 
     if (!fullWalletAddress) {
         alert("Please connect your wallet first.");
         return;
     }
 
-    const apiUrl = `${apiBaseUrl}/quote?srcChain=${srcChain}&dstChain=${dstChain}&srcTokenAddress=${srcTokenAddress}&dstTokenAddress=${dstTokenAddress}&amount=${amountInWei}&walletAddress=${fullWalletAddress}&enableEstimate=true`;
+    const apiUrl = `${apiBaseUrl}/quote?srcChain=${chainIds[fromNetwork]}&dstChain=${chainIds[toNetwork]}&srcTokenAddress=${srcTokenAddress}&dstTokenAddress=${dstTokenAddress}&amount=${amountInWei.toFixed()}&walletAddress=${fullWalletAddress}&enableEstimate=true`;
 
     try {
         const response = await fetch(apiUrl);
         const data = await response.json();
 
         if (response.ok) {
-            const dstTokenAmountWei = BigInt(data.dstTokenAmount || "0");
+            const dstTokenAmountWei = new BigNumber(data.dstTokenAmount || "0");
+            const dstTokenAmount = dstTokenAmountWei.dividedBy(new BigNumber(10).pow(decimals)).toFixed(2);
 
-            // Perform manual division and scaling using BigInt
-            const scalingFactor = BigInt(Math.pow(10, decimals));
-            const wholePart = dstTokenAmountWei / scalingFactor;
-            const fractionalPart = dstTokenAmountWei % scalingFactor;
-
-            const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6);
-            const dstTokenAmount = `${wholePart}.${fractionalStr}`;
+            console.log("Raw dstTokenAmount in Wei:", data.dstTokenAmount);
+            console.log("Formatted dstTokenAmount:", dstTokenAmount);
 
             (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${dstTokenSymbol}`;
         } else {
@@ -180,6 +149,23 @@ function updateTokenOptions(tokenElementId: string, chain: keyof typeof tokenAdd
         tokenDropdown.selectedIndex = 0;
     }
 }
+
+// Function to handle and display API errors
+function handleAPIError(data: any) {
+    const description = data.description || "An unknown error occurred.";
+    console.error("Error Data:", JSON.stringify(data, null, 2));
+
+    if (description.includes("token not supported")) {
+        alert("The selected token is not supported on the selected network. Please check and try again.");
+    } else if (description.includes("amount cannot be empty")) {
+        alert("Amount cannot be empty. Please enter a valid amount and try again.");
+    } else if (description.includes("limit of requests per second")) {
+        alert("You have exceeded the API request rate limit. Please wait a moment and try again.");
+    } else {
+        alert(`API Error: ${description}`);
+    }
+}
+
 
 // Event listeners for user actions
 document.getElementById("connect-wallet-btn")!.addEventListener("click", connectWallet);

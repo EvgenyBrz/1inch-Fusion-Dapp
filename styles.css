@@ -15,11 +15,10 @@ body {
     float: right;
 }
 .wallet-info {
-    float: left;
     display: flex;
     align-items: center;
+    gap: 10px; /* Space between items */
 }
-
 .wallet-info label {
     font-size: 15px;
     margin-right: 10px;
@@ -28,7 +27,6 @@ body {
     padding: 5px;
     border: 1px solid #000;
     border-radius: 4px;
-    margin-right: 10px;
     text-align: center;
     width: 120px;
     font-size: 14px;
@@ -38,16 +36,13 @@ body {
     border-radius: 4px;
     cursor: pointer;
     border: 1px solid #000;
-    display: inline-block;
     font-size: 14px;
 }
 .button {
     padding: 5px 10px;
-    margin-left: 0px;
     border-radius: 4px;
     cursor: pointer;
     border: 1px solid #000;
-    display: inline-block;
 }
 .actions, .swap-section, .order-info, .transaction-status {
     margin-top: 20px;
@@ -81,7 +76,6 @@ body {
 .currency-dropdown {
     padding: 5px;
     border: none;
-    text-align: center;
     background-color: #f9f9f9;
     cursor: pointer;
 }
@@ -96,7 +90,6 @@ body {
 .quote, .balance-display, .order-hash {
     font-size: 12px;
     color: #333;
-    text-align: center;
     display: inline-block;
     margin-top: 5px;
 }
@@ -106,22 +99,27 @@ body {
     width: 150px;
     border: 1px solid #000;
     border-radius: 4px;
-    text-align: center;
-    color: #333;
     background-color: #f9f9f9;
     font-size: 14px;
 }
-.quote-box, .hash-box {
+.hash-box {
     margin-top: 0px;
     padding: 10px;
     width: 250px;
     border: 1px solid #999;
     border-radius: 4px;
-    text-align: center;
-    color: #333;
     background-color: #f9f9f9;
     font-size: 12px;
-    font-weight: normal;
+}
+.quote-box{
+    margin-top: 0px;
+    margin-left: 10px;
+    padding: 10px;
+    width: 250px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    font-size: 12px;
 }
 .arrow {
     display: inline-block;
