@@ -26,17 +26,17 @@ const sdk = new SDK({
 // Define token addresses for each chain
 const tokenAddresses = {
     "Polygon": {
-        "USDC": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // USDC on Polygon
-        "USDT": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"  // USDT on Polygon
+        "USDC": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+        "USDT": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
     },
     "BNB": {
-        "USDC": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // USDC on Binance Smart Chain
-        "USDT": "0x55d398326f99059ff775485246999027b3197955"  // USDT on Binance Smart Chain
+        "USDC": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+        "USDT": "0x55d398326f99059ff775485246999027b3197955"
     }
-};
+} as const;
 
 // Chain IDs
-const chainIds = { "Polygon": 137, "BNB": 56 };
+const chainIds = { "Polygon": 137, "BNB": 56 } as const;
 
 // Minimum Swap Amount (adjust as needed)
 const MIN_SWAP_AMOUNT = BigInt(10 ** 9); // Example minimum amount, adjust as needed
@@ -68,7 +68,7 @@ function handleAPIError(data: any) {
 
 // Debounce function to prevent too many API calls
 function debounce(func: Function, delay: number) {
-    let timer: number;
+    let timer: ReturnType<typeof setTimeout>; // Correct the timer type
     return function (...args: any[]) {
         clearTimeout(timer);
         timer = setTimeout(() => func(...args), delay);
@@ -76,17 +76,17 @@ function debounce(func: Function, delay: number) {
 }
 
 // Function to check if token is supported
-function checkTokenSupport(srcTokenSymbol: string, fromNetwork: string): boolean {
+function checkTokenSupport(srcTokenSymbol: keyof typeof tokenAddresses["Polygon"], fromNetwork: keyof typeof tokenAddresses): boolean {
     const supportedTokens = tokenAddresses[fromNetwork];
     return supportedTokens ? !!supportedTokens[srcTokenSymbol] : false;
 }
 
 // Main function to fetch cross-chain quotes
 const getCrossChainQuote = debounce(async function() {
-    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value;
-    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value;
-    const srcTokenSymbol = (document.getElementById("from-token") as HTMLSelectElement).value;
-    const dstTokenSymbol = (document.getElementById("to-token") as HTMLSelectElement).value;
+    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
+    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
+    const srcTokenSymbol = (document.getElementById("from-token") as HTMLSelectElement).value as keyof typeof tokenAddresses["Polygon"];
+    const dstTokenSymbol = (document.getElementById("to-token") as HTMLSelectElement).value as keyof typeof tokenAddresses["Polygon"];
     const amount = (document.getElementById("swap-amount") as HTMLInputElement).value;
 
     const srcTokenAddress = tokenAddresses[fromNetwork]?.[srcTokenSymbol];
@@ -125,16 +125,17 @@ const getCrossChainQuote = debounce(async function() {
         const data = await response.json();
 
         if (response.ok) {
-            // Get the amount in Wei from the response
             const dstTokenAmountWei = BigInt(data.dstTokenAmount || "0");
+            // Perform manual division and scaling using BigInt
+            const scalingFactor = BigInt(Math.pow(1000, decimals));
+            const wholePart = dstTokenAmountWei / scalingFactor;
+            console.log(`${wholePart} ${dstTokenAmountWei}`);
+            const fractionalPart = dstTokenAmountWei % scalingFactor;
 
-            // Divide by 10^decimals and then round to 6 decimal places
-            const dstTokenAmount = (Number(dstTokenAmountWei) / Math.pow(10, decimals)).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 6,
-            });
+            // Convert fractional part to a fixed number of decimals for display
+            const fractionalStr = fractionalPart.toString().padStart(decimals, '0').slice(0, 6); // Limit to 6 decimals
+            const dstTokenAmount = `${wholePart}.${fractionalStr}`;
 
-            // Display the formatted result
             (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${dstTokenSymbol}`;
         } else {
             handleAPIError(data);
@@ -148,8 +149,8 @@ const getCrossChainQuote = debounce(async function() {
 
 // Function to handle network changes and update token addresses
 function updateNetworks() {
-    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value;
-    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value;
+    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
+    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
 
     if (fromNetwork === toNetwork) {
         (document.getElementById("toNetwork") as HTMLSelectElement).value = fromNetwork === "Polygon" ? "BNB" : "Polygon";
@@ -160,7 +161,7 @@ function updateNetworks() {
 }
 
 // Utility function to dynamically update the token options based on the selected chain
-function updateTokenOptions(tokenElementId: string, chain: string) {
+function updateTokenOptions(tokenElementId: string, chain: keyof typeof tokenAddresses) {
     const tokenDropdown = document.getElementById(tokenElementId) as HTMLSelectElement;
     tokenDropdown.innerHTML = "";
 
