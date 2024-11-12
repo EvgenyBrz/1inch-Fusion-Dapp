@@ -71,13 +71,45 @@ app.get('/api/quote', async (req, res) => {
     const dstTokenAddress = req.query.dstTokenAddress;
     const amount = req.query.amount;
     const walletAddress = req.query.walletAddress;
-    const enableEstimate = req.query.enableEstimate || 'True'; // Default to 'True'
+    const enableEstimate = req.query.enableEstimate === 'true'; // Convert to boolean
 
-    // Logging to debug if the values are parsed correctly
-    console.log(`srcChain: ${srcChain}, dstChain: ${dstChain}, amount: ${amount}`);
+    // Constructing the API endpoint with parameters
+    const targetUrl = 'https://api.1inch.dev/fusion-plus/quoter/v1.0/quote/receive';
+    const params = {
+        srcChain,
+        dstChain,
+        srcTokenAddress,
+        dstTokenAddress,
+        amount,
+        walletAddress,
+        enableEstimate
+    };
 
-    // Proceed with API call to get swap quote from 1inch API based on the provided parameters...
-    // Follow the previous steps to retrieve and respond with the quote
+    // Log the parameters to verify correctness
+    console.log("Requesting quote with params:", params);
+
+    try {
+        const response = await axios.get(targetUrl, {
+            headers: {
+                'Authorization': `Bearer ${process.env.VITE_API_KEY || ''}`
+            },
+            params,
+            httpsAgent
+        });
+
+        if (response.headers['content-type']?.includes('application/json')) {
+            res.status(response.status).json(response.data);
+        } else {
+            console.error("Unexpected response format from 1inch API:", response.data);
+            res.status(500).json({ error: "Unexpected response format from 1inch API", details: response.data });
+        }
+    } catch (error) {
+        console.error("Error fetching quote from 1inch API:", error.response ? error.response.data : error.message);
+        res.status(error.response ? error.response.status : 500).json({
+            error: "Failed to fetch quote from 1inch API",
+            details: error.response ? error.response.data : error.message
+        });
+    }
 });
 
 // Listen on the specified port
