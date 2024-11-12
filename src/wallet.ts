@@ -62,7 +62,6 @@ function parseUserAddress(userAddress: string): string {
 // Fetch and display wallet balance using the 1inch API
 export async function fetch1inchBalance(): Promise<void> {
     const apiUrl = `http://localhost:3000/api/balance`; // Use your proxy server's endpoint
-    const chainId = 1; // Mainnet ID for Ethereum; update if using a different chain
 
     if (!fullWalletAddress) {
         fullWalletAddress = await connectWallet();
@@ -72,7 +71,20 @@ export async function fetch1inchBalance(): Promise<void> {
         }
     }
 
-    console.log("Fetching balance with walletAddress:", fullWalletAddress, "and chainId:", chainId); // Log to verify parameters
+    // Get the connected chainId from MetaMask
+    let chainId = await web3.eth.getChainId();
+    chainId = Number(chainId);  // Ensure chainId is a number
+
+    console.log("Chain ID:", chainId); // Debugging log
+
+    // Ensure only BSC (56) and Polygon (137) are supported
+    if (![56, 137].includes(chainId)) {
+        alert("Unsupported network. Please connect to BSC or Polygon.");
+        return;
+    }
+
+    // Log the wallet address and chainId before making the request
+    console.log("Sending request to server with walletAddress:", fullWalletAddress, "chainId:", chainId);
 
     try {
         const response = await fetch(`${apiUrl}?walletAddress=${fullWalletAddress}&chainId=${chainId}`);
@@ -81,20 +93,43 @@ export async function fetch1inchBalance(): Promise<void> {
         }
 
         const balances = await response.json();
-        console.log("Raw response from 1inch API:", balances); // Debug log
+        console.log("Balances received from server:", balances); // Log the full response to inspect
 
-        // Process balances
-        const balanceText = Object.entries(balances)
-            .map(([token, amount]) => {
-                return `${token}: ${parseFloat(web3.utils.fromWei(amount as string, 'ether')).toFixed(4)}`;
-            })
-            .join('\n');
-        alert(`Token Balances:\n${balanceText}`);
+        // Prepare and format the balances for display
+        let formattedBalances = "";
+
+        // Check if USDC balance exists and is greater than 0
+        if (balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'] && parseFloat(web3.utils.fromWei(balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'], 'ether')) > 0) {
+            const formattedUSDC = parseFloat(web3.utils.fromWei(balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'], 'ether')).toFixed(2);
+            formattedBalances += `USDC: ${formattedUSDC}\n`;
+        }
+
+        // Check if USDT balance exists and is greater than 0
+        if (balances['0x55d398326f99059ff775485246999027b3197955'] && parseFloat(web3.utils.fromWei(balances['0x55d398326f99059ff775485246999027b3197955'], 'ether')) > 0) {
+            const formattedUSDT = parseFloat(web3.utils.fromWei(balances['0x55d398326f99059ff775485246999027b3197955'], 'ether')).toFixed(2);
+            formattedBalances += `USDT: ${formattedUSDT}\n`;
+        }
+
+        // Fetch the BNB balance directly from the chain
+        const bnbBalance = await web3.eth.getBalance(fullWalletAddress);  // Fetching native balance (BNB)
+        if (parseFloat(web3.utils.fromWei(bnbBalance, 'ether')) > 0) {
+            const formattedBNB = parseFloat(web3.utils.fromWei(bnbBalance, 'ether')).toFixed(2);
+            formattedBalances += `BNB: ${formattedBNB}`;
+        }
+
+        // If there are any balances, show them in an alert
+        if (formattedBalances) {
+            alert(`Token Balances:\n${formattedBalances}`);
+        } else {
+            alert("No balances found.");
+        }
+
     } catch (error) {
         console.error("Error fetching balances from proxy server:", error);
         alert("Failed to fetch token balances. Check console for details.");
     }
 }
+
 
 // Initialize wallet connection state on page load
 export function initializeWallet(): void {
