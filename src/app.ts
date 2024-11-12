@@ -104,16 +104,20 @@ const getCrossChainQuote = debounce(async function() {
         const data = await response.json();
 
         if (response.ok) {
+            // Assuming dstTokenAmount is given in Wei (1e-18), we divide by 1e12 to convert to 6 decimals.
             const dstTokenAmountWei = new BigNumber(data.dstTokenAmount || "0");
-            const dstTokenAmount = dstTokenAmountWei.dividedBy(new BigNumber(10).pow(decimals)).toFixed(2);
-
-            console.log("Raw dstTokenAmount in Wei:", data.dstTokenAmount);
-            console.log("Formatted dstTokenAmount:", dstTokenAmount);
-
-            (document.getElementById("quote-result") as HTMLElement).textContent = `Amount to Receive: ${dstTokenAmount} ${dstTokenSymbol}`;
+            const dstTokenAmount = dstTokenAmountWei.dividedBy(new BigNumber(10).pow(18)).toFixed(2);
+        
+            // Format to display with commas and two decimal places
+            const formattedAmount = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(dstTokenAmount));
+        
+            console.log("Formatted dstTokenAmount:", formattedAmount);
+            document.getElementById("quote-result")!.textContent = `Amount to Receive: ${formattedAmount} ${dstTokenSymbol}`;
         } else {
             handleAPIError(data);
         }
+        
+        
     } catch (error) {
         console.error("Failed to fetch quote:", error);
         alert("Error fetching quote. Please check the console for details.");
