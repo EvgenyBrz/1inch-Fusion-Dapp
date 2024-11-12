@@ -3,14 +3,14 @@ import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { connectWallet, initializeWallet, fetch1inchBalance, fullWalletAddress } from './wallet';
 
-// API configuration
-const apiKey = import.meta.env.VITE_API_KEY;
-const apiBaseUrl = "http://localhost:3000/api"; // Update if using a live server
 
-// Initialize Web3
+const apiKey = import.meta.env.VITE_API_KEY;
+const apiBaseUrl = "http://localhost:3000/api";
+
+
 const web3 = new Web3(window.ethereum);
 
-// Initialize the SDK (if required for additional 1inch functionality)
+
 const sdk = new SDK({
     url: apiBaseUrl,
     authKey: apiKey,
@@ -79,8 +79,12 @@ const getCrossChainQuote = debounce(async function() {
         return;
     }
 
-    const decimals = 6; // For USDT and USDC
-    const amountInWei = new BigNumber(amountInFloat).multipliedBy(new BigNumber(10).pow(decimals));
+    // Conversion factor based on fromNetwork
+    const srcDecimals = fromNetwork === "Polygon" ? 6 : 18;
+    const dstDecimals = toNetwork === "Polygon" ? 6 : 18;
+
+    // Convert the input amount to the correct wei format
+    const amountInWei = new BigNumber(amountInFloat).multipliedBy(new BigNumber(10).pow(srcDecimals));
 
     console.log("API call parameters:", {
         srcChain: chainIds[fromNetwork],
@@ -104,25 +108,24 @@ const getCrossChainQuote = debounce(async function() {
         const data = await response.json();
 
         if (response.ok) {
-            // Assuming dstTokenAmount is given in Wei (1e-18), we divide by 1e12 to convert to 6 decimals.
             const dstTokenAmountWei = new BigNumber(data.dstTokenAmount || "0");
-            const dstTokenAmount = dstTokenAmountWei.dividedBy(new BigNumber(10).pow(18)).toFixed(2);
-        
-            // Format to display with commas and two decimal places
+
+            // Adjust display conversion based on toNetwork
+            const dstTokenAmount = dstTokenAmountWei.dividedBy(new BigNumber(10).pow(dstDecimals)).toFixed(2);
+
             const formattedAmount = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(dstTokenAmount));
-        
+
             console.log("Formatted dstTokenAmount:", formattedAmount);
             document.getElementById("quote-result")!.textContent = `Amount to Receive: ${formattedAmount} ${dstTokenSymbol}`;
         } else {
             handleAPIError(data);
         }
-        
-        
     } catch (error) {
         console.error("Failed to fetch quote:", error);
         alert("Error fetching quote. Please check the console for details.");
     }
 }, 1000);
+
 
 // Function to handle network changes and update token addresses
 function updateNetworks() {
