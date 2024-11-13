@@ -28,8 +28,8 @@ app.use('/api/balance', async (req, res) => {
             "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d"  // USDC on BSC
         ],
         '137': [
-            "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eD69", // USDC on Polygon
-            "0x2f7f40baf21c6fcde60f89d430150285a02e5b22"  // USDT on Polygon
+            "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // USDC on Polygon
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"  // USDT on Polygon
         ]
     };
 

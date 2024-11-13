@@ -60,8 +60,11 @@ function parseUserAddress(userAddress: string): string {
 }
 
 // Fetch and display wallet balance using the 1inch API
+// Fetch and display wallet balance using the 1inch API
+// Fetch and display wallet balance using the 1inch API
+// Fetch and display wallet balance using the 1inch API
 export async function fetch1inchBalance(): Promise<void> {
-    const apiUrl = `http://localhost:3000/api/balance`; // Use your proxy server's endpoint
+    const apiUrl = `http://localhost:3000/api/balance`; // Your proxy server's endpoint
 
     if (!fullWalletAddress) {
         fullWalletAddress = await connectWallet();
@@ -71,19 +74,16 @@ export async function fetch1inchBalance(): Promise<void> {
         }
     }
 
-    // Get the connected chainId from MetaMask
     let chainId = await web3.eth.getChainId();
     chainId = Number(chainId);  // Ensure chainId is a number
 
     console.log("Chain ID:", chainId); // Debugging log
 
-    // Ensure only BSC (56) and Polygon (137) are supported
     if (![56, 137].includes(chainId)) {
         alert("Unsupported network. Please connect to BSC or Polygon.");
         return;
     }
 
-    // Log the wallet address and chainId before making the request
     console.log("Sending request to server with walletAddress:", fullWalletAddress, "chainId:", chainId);
 
     try {
@@ -95,40 +95,71 @@ export async function fetch1inchBalance(): Promise<void> {
         const balances = await response.json();
         console.log("Balances received from server:", balances); // Log the full response to inspect
 
+        // Log the keys to check the response structure
+        console.log("Keys in balance response:", Object.keys(balances));  // New log to check the keys
+
         // Prepare and format the balances for display
         let formattedBalances = "";
 
-        // Check if USDC balance exists and is greater than 0
-        if (balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'] && parseFloat(web3.utils.fromWei(balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'], 'ether')) > 0) {
-            const formattedUSDC = parseFloat(web3.utils.fromWei(balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'], 'ether')).toFixed(2);
-            formattedBalances += `USDC: ${formattedUSDC}\n`;
+        // Check if the balances object contains the correct USDC balance
+        const usdcBalanceRaw = balances['0x3c499c542cef5e3811e1192ce70d8cc03d5c3359'];
+        const usdtBalanceRaw = balances['0xc2132d05d31c914a87c6611c10748aeb04b58e8f'];
+
+        // Log to check if the balances are being retrieved
+        console.log("Raw USDC balance:", usdcBalanceRaw);  // Check if the balance is being retrieved correctly
+        console.log("Raw USDT balance:", usdtBalanceRaw);
+
+        if (chainId === 56) {  // BSC network
+            if (balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d']) {
+                const formattedUSDC = parseFloat(web3.utils.fromWei(balances['0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d'], 'ether')).toFixed(2);
+                formattedBalances += `USDC: ${formattedUSDC}\n`;
+            }
+        } else if (chainId === 137) {  // Polygon network
+            // Improved check for USDC balance
+            if (usdcBalanceRaw !=0) {
+                const formattedUSDC = (parseFloat(usdcBalanceRaw) / 1e6).toFixed(2);  // Divide by 10^6 for USDC on Polygon
+                console.log("Formatted USDC:", formattedUSDC);  // Log the formatted value
+                formattedBalances += `USDC: ${formattedUSDC}\n`;
+            } else {
+                console.log("No USDC balance found for this address on Polygon.");
+            }
+
+            if (usdtBalanceRaw != 0) {
+                const formattedUSDT = (parseFloat(usdtBalanceRaw) / 1e6).toFixed(2);  // Divide by 10^6 for USDT on Polygon
+                formattedBalances += `USDT: ${formattedUSDT}\n`;
+            }
         }
 
-        // Check if USDT balance exists and is greater than 0
-        if (balances['0x55d398326f99059ff775485246999027b3197955'] && parseFloat(web3.utils.fromWei(balances['0x55d398326f99059ff775485246999027b3197955'], 'ether')) > 0) {
-            const formattedUSDT = parseFloat(web3.utils.fromWei(balances['0x55d398326f99059ff775485246999027b3197955'], 'ether')).toFixed(2);
-            formattedBalances += `USDT: ${formattedUSDT}\n`;
-        }
-
-        // Fetch the BNB balance directly from the chain
-        const bnbBalance = await web3.eth.getBalance(fullWalletAddress);  // Fetching native balance (BNB)
-        if (parseFloat(web3.utils.fromWei(bnbBalance, 'ether')) > 0) {
+        // Fetch the BNB balance directly for BSC
+        if (chainId === 56) {
+            const bnbBalance = await web3.eth.getBalance(fullWalletAddress);  // Fetching native balance (BNB)
             const formattedBNB = parseFloat(web3.utils.fromWei(bnbBalance, 'ether')).toFixed(2);
             formattedBalances += `BNB: ${formattedBNB}`;
         }
 
-        // If there are any balances, show them in an alert
-        if (formattedBalances) {
-            alert(`Token Balances:\n${formattedBalances}`);
-        } else {
-            alert("No balances found.");
-        }
+// Determine the network name based on the chain ID
+const networkName = chainId === 137 ? "Polygon" : chainId === 56 ? "BNB" : "Unknown";
+
+// Show balances in alert
+if (formattedBalances) {
+    alert(`Token Balances On ${networkName}:\n${formattedBalances}`);
+} else {
+    alert("No balances found.");
+}
+
 
     } catch (error) {
         console.error("Error fetching balances from proxy server:", error);
         alert("Failed to fetch token balances. Check console for details.");
     }
 }
+
+
+
+
+
+
+
 
 
 // Initialize wallet connection state on page load
