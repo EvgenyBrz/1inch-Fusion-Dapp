@@ -2,6 +2,7 @@ import { SDK, NetworkEnum, QuoteParams, OrderParams, TakingFeeInfo, ActiveOrders
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { connectWallet, initializeWallet, fetch1inchBalance, fullWalletAddress } from './wallet';
+import { keccak256, hexlify, concat, randomBytes } from "ethers";
 
 
 const apiKey = import.meta.env.VITE_API_KEY;
@@ -24,7 +25,6 @@ const sdk = new SDK({
     }
 });
 
-// Define token addresses for each chain
 const tokenAddresses = {
     "Polygon": {
         "USDC": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
@@ -39,7 +39,7 @@ const tokenAddresses = {
 // Chain IDs
 const chainIds = { "Polygon": 137, "BNB": 56 } as const;
 
-// Minimum Swap Amount (adjust as needed)
+// Minimum Swap Amount
 const MIN_SWAP_AMOUNT = new BigNumber(10 ** 6); // 1 USDT or 1 USDC equivalent in smallest unit
 
 // Debounce function to limit API requests
@@ -127,6 +127,110 @@ const getCrossChainQuote = debounce(async function() {
 }, 1000);
 
 
+async function handleSwapButtonClick() {
+    const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
+    const toNetwork = (document.getElementById("toNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
+    const srcTokenSymbol = (document.getElementById("from-token") as HTMLSelectElement).value as keyof typeof tokenAddresses["Polygon"];
+    const dstTokenSymbol = (document.getElementById("to-token") as HTMLSelectElement).value as keyof typeof tokenAddresses["Polygon"];
+    const amount = (document.getElementById("swap-amount") as HTMLInputElement).value;
+
+    const srcTokenAddress = tokenAddresses[fromNetwork]?.[srcTokenSymbol];
+    const dstTokenAddress = tokenAddresses[toNetwork]?.[dstTokenSymbol];
+
+    if (!srcTokenAddress || !dstTokenAddress || !checkTokenSupport(srcTokenSymbol, fromNetwork)) {
+        alert("Selected tokens are not supported on the selected networks.");
+        return;
+    }
+
+    const amountInFloat = parseFloat(amount);
+    if (isNaN(amountInFloat) || amountInFloat <= 0) {
+        alert("Please enter a valid amount greater than zero.");
+        return;
+    }
+
+    if (!fullWalletAddress) {
+        alert("Please connect your wallet first.");
+        return;
+    }
+
+    // Conversion factor based on fromNetwork
+    const srcDecimals = fromNetwork === "Polygon" ? 6 : 18;
+    const amountInWei = new BigNumber(amountInFloat).multipliedBy(new BigNumber(10).pow(srcDecimals));
+
+    try {
+        console.log("Calling SDK getQuote with:", {
+            srcChainId: chainIds[fromNetwork],
+            dstChainId: chainIds[toNetwork],
+            srcTokenAddress,
+            dstTokenAddress,
+            amount: amountInWei.toFixed(),
+            walletAddress: fullWalletAddress,
+            enableEstimate: true,
+        });
+
+        const quoteParams: QuoteParams = {
+            srcChainId: chainIds[fromNetwork],
+            dstChainId: chainIds[toNetwork],
+            srcTokenAddress,
+            dstTokenAddress,
+            amount: amountInWei.toFixed(),
+            walletAddress: fullWalletAddress,
+            enableEstimate: true,
+        };
+
+        const quoteResponse = await sdk.getQuote(quoteParams);
+
+        console.log("SDK Quote Response:", quoteResponse);
+
+        // Prepare secrets and hash locks
+        const secretsCount = quoteResponse.getPreset().secretsCount || 1;
+        const secrets = Array.from({ length: secretsCount }).map(() => 
+            utils.hexlify(randomBytes(32)) // Converts Uint8Array to a hexadecimal string
+        );
+        const secretHashes = secrets.map(secret => HashLock.hashSecret(secret));
+
+        const hashLock = secretsCount === 1
+            ? HashLock.forSingleFill(secrets[0])
+            : HashLock.forMultipleFills(
+                secretHashes.map((secretHash, i) =>
+                    solidityKeccak256(["uint64", "bytes32"], [i, secretHash.toString()])
+                )
+            );
+
+        console.log("Secrets and Hash Locks prepared:", { secrets, hashLock });
+
+        // Place the order
+        const orderResponse = await sdk.placeOrder(quoteResponse, {
+            walletAddress: fullWalletAddress,
+            hashLock,
+            secretHashes,
+        });
+
+        console.log("Order placed successfully:", orderResponse);
+
+        // Poll for status updates
+        const orderHash = orderResponse.orderHash;
+        const intervalId = setInterval(async () => {
+            try {
+                console.log("Polling for order status...");
+                const orderStatus = await sdk.getOrderStatus(orderHash);
+
+                if (orderStatus.status === "executed") {
+                    console.log("Order executed successfully.");
+                    clearInterval(intervalId);
+                }
+            } catch (error) {
+                console.error("Error polling order status:", error);
+            }
+        }, 5000);
+
+    } catch (error) {
+        console.error("Error during swap process:", error);
+        alert("An error occurred during the swap process. Check console for details.");
+    }
+}
+
+
 // Function to handle network changes and update token addresses
 function updateNetworks() {
     const fromNetwork = (document.getElementById("fromNetwork") as HTMLSelectElement).value as keyof typeof tokenAddresses;
@@ -182,3 +286,4 @@ document.getElementById("fromNetwork")!.addEventListener("change", updateNetwork
 document.getElementById("toNetwork")!.addEventListener("change", updateNetworks);
 document.getElementById("from-token")!.addEventListener("change", getCrossChainQuote);
 document.getElementById("to-token")!.addEventListener("change", getCrossChainQuote);
+document.getElementById("place-order-btn")!.addEventListener("click", handleSwapButtonClick);

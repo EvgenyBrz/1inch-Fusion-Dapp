@@ -60,11 +60,8 @@ function parseUserAddress(userAddress: string): string {
 }
 
 // Fetch and display wallet balance using the 1inch API
-// Fetch and display wallet balance using the 1inch API
-// Fetch and display wallet balance using the 1inch API
-// Fetch and display wallet balance using the 1inch API
 export async function fetch1inchBalance(): Promise<void> {
-    const apiUrl = `http://localhost:3000/api/balance`; // Your proxy server's endpoint
+    const apiUrl = `http://localhost:3000/api/balance`; 
 
     if (!fullWalletAddress) {
         fullWalletAddress = await connectWallet();
@@ -141,18 +138,18 @@ export async function fetch1inchBalance(): Promise<void> {
 const networkName = chainId === 137 ? "Polygon" : chainId === 56 ? "BNB" : "Unknown";
 
 // Show balances in alert
-if (formattedBalances) {
-    alert(`Token Balances On ${networkName}:\n${formattedBalances}`);
-} else {
-    alert("No balances found.");
-}
+    if (formattedBalances) {
+        alert(`Token Balances On ${networkName}:\n${formattedBalances}`);
+    } else {
+        alert("No balances found.");
+    }   
 
 
-    } catch (error) {
-        console.error("Error fetching balances from proxy server:", error);
-        alert("Failed to fetch token balances. Check console for details.");
+        } catch (error) {
+            console.error("Error fetching balances from proxy server:", error);
+            alert("Failed to fetch token balances. Check console for details.");
+        }
     }
-}
 
 
 
@@ -174,5 +171,5 @@ export function initializeWallet(): void {
     }
 }
 
-// Export fullWalletAddress for use in other files, such as app.ts
+// Export fullWalletAddress for use in other files
 export { fullWalletAddress };
